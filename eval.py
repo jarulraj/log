@@ -129,10 +129,11 @@ YAXIS_ROUND = 1000.0
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 PELOTON_BUILD_DIR = BASE_DIR + "/../peloton/build"
+LOGGING = PELOTON_BUILD_DIR + "/tests/logging_test"
 
 OUTPUT_FILE = "outputfile.summary"
 
-PROJECTIVITY_DIR = BASE_DIR + "/results/projectivity/"
+WORKLOAD_DIR = BASE_DIR + "/results/workload/"
 
 LAYOUTS = ("row", "column", "hybrid")
 OPERATORS = ("direct", "aggregate")
@@ -140,14 +141,11 @@ REORG_LAYOUTS = ("row", "hybrid")
 
 SCALE_FACTOR = 100.0
 
-PROJECTIVITY = (0.01, 0.1, 0.5, 1.0)
-
-OP_PROJECTIVITY = (0.01, 0.1, 1.0)
-OP_COLUMN_COUNT = 100
+WORKLOAD_COUNT = (10, 20, 50, 100)
 
 TRANSACTION_COUNT = 3
 
-PROJECTIVITY_EXPERIMENT = 1
+WORKLOAD_EXPERIMENT = 1
 
 ###################################################################################
 # UTILS
@@ -210,126 +208,13 @@ def saveGraph(fig, output, width, height):
 # PLOT
 ###################################################################################
 
-def create_bar_legend():
-    fig = pylab.figure()
-    ax1 = fig.add_subplot(111)
-
-    figlegend = pylab.figure(figsize=(9, 0.5))
-
-    num_items = len(LAYOUTS);
-    ind = np.arange(1)
-    margin = 0.10
-    width = ((1.0 - 2 * margin) / num_items) * 2
-    data = [1]
-
-    bars = [None] * (len(LAYOUTS) + 1) * 2
-
-    # TITLE
-    idx = 0
-    bars[idx] = ax1.bar(ind + margin + ((idx) * width), data, width,
-                        color = 'w',
-                        linewidth=0)
-
-    idx = 0
-    for group in xrange(len(LAYOUTS)):
-        bars[idx + 1] = ax1.bar(ind + margin + ((idx + 1) * width), data, width,
-                              color=OPT_COLORS[idx],
-                              hatch=OPT_PATTERNS[idx * 2],
-                              linewidth=BAR_LINEWIDTH)
-
-        idx = idx + 1
-
-    TITLE = "Storage Models : "
-    LABELS = [TITLE, "NSM", "DSM", "FSM"]
-
-    # LEGEND
-    figlegend.legend(bars, LABELS, prop=LEGEND_FP,
-                     loc=1, ncol=4,
-                     mode="expand", shadow=OPT_LEGEND_SHADOW,
-                     frameon=False, borderaxespad=0.0,
-                     handleheight=1.5, handlelength=4)
-
-    figlegend.savefig('legend_bar.pdf')
-
-def create_vertical_legend():
-    fig = pylab.figure()
-    ax1 = fig.add_subplot(111)
-
-    figlegend = pylab.figure(figsize=(11, 0.5))
-
-    num_items = len(LAYOUTS);
-    ind = np.arange(1)
-    margin = 0.10
-    width = ((1.0 - 2 * margin) / num_items) * 2
-    data = [1]
-
-    bars = [None] * (len(TUPLES_PER_TILEGROUP) + 1) * 2
-
-    # TITLE
-    idx = 0
-    bars[idx] = ax1.bar(ind + margin + ((idx) * width), data, width,
-                        color = 'w',
-                        linewidth=0)
-
-    idx = 0
-    for group in xrange(len(TUPLES_PER_TILEGROUP)):
-        bars[idx + 1] = ax1.bar(ind + margin + ((idx + 1) * width), data, width,
-                              color=OPT_COLORS[idx],
-                              linewidth=BAR_LINEWIDTH)
-
-        idx = idx + 1
-
-
-    TITLE = "Tuples Per Tile Group : "
-    LABELS = [TITLE, 10, 100, 1000, 10000]
-
-    # LEGEND
-    figlegend.legend(bars, LABELS, prop=LEGEND_FP,
-                     loc=1, ncol=5,
-                     mode="expand", shadow=OPT_LEGEND_SHADOW,
-                     frameon=False, borderaxespad=0.0,
-                     handleheight=1.5, handlelength=4)
-
-    figlegend.savefig('legend_vertical.pdf')
-
-def create_legend():
-    fig = pylab.figure()
-    ax1 = fig.add_subplot(111)
-
-    figlegend = pylab.figure(figsize=(9, 0.5))
-    idx = 0
-    lines = [None] * (len(LAYOUTS) + 1)
-    data = [1]
-    x_values = [1]
-
-    TITLE = "Storage Models : "
-    LABELS = [TITLE, "NSM", "DSM", "FSM"]
-
-    lines[idx], = ax1.plot(x_values, data, linewidth = 0)
-    idx = 0
-
-    for group in xrange(len(LAYOUTS)):
-        lines[idx + 1], = ax1.plot(x_values, data,
-                               color=OPT_LINE_COLORS[idx], linewidth=OPT_LINE_WIDTH,
-                               marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, label=str(group))
-
-        idx = idx + 1
-
-    # LEGEND
-    figlegend.legend(lines, LABELS, prop=LEGEND_FP,
-                     loc=1, ncol=4, mode="expand", shadow=OPT_LEGEND_SHADOW,
-                     frameon=False, borderaxespad=0.0, handlelength=4)
-
-    figlegend.savefig('legend.pdf')
-
-
-def create_projectivity_bar_chart(datasets):
+def create_workload_bar_chart(datasets):
     fig = plot.figure()
     ax1 = fig.add_subplot(111)
 
-    x_values = PROJECTIVITY
+    x_values = WORKLOAD
     N = len(x_values)
-    x_labels = PROJECTIVITY
+    x_labels = WORKLOAD
 
     layouts = ["NSM", "DSM", "FSM"]
 
@@ -384,8 +269,8 @@ def create_projectivity_bar_chart(datasets):
 # PLOT HELPERS
 ###################################################################################
 
-# PROJECTIVITY -- PLOT
-def projectivity_plot():
+# WORKLOAD -- PLOT
+def workload_plot():
 
     column_count_type = 0
     for column_count in COLUMN_COUNTS:
@@ -398,7 +283,7 @@ def projectivity_plot():
                 datasets = []
 
                 for layout in LAYOUTS:
-                    data_file = PROJECTIVITY_DIR + "/" + layout + "/" + operator + "/" + str(column_count) + "/" + str(write_ratio) + "/" + "projectivity.csv"
+                    data_file = WORKLOAD_DIR + "/" + layout + "/" + operator + "/" + str(column_count) + "/" + str(write_ratio) + "/" + "projectivity.csv"
 
                     dataset = loadDataFile(4, 2, data_file)
                     datasets.append(dataset)
@@ -415,7 +300,7 @@ def projectivity_plot():
                 else:
                     table_type = "wide"
 
-                fileName = "projectivity-" + operator + "-" + table_type + "-" + write_mix + ".pdf"
+                fileName = "workload-" + operator + "-" + table_type + "-" + write_mix + ".pdf"
 
                 saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
@@ -432,8 +317,6 @@ def clean_up_dir(result_directory):
 
 # RUN EXPERIMENT
 def run_experiment(program,
-                   scale_factor,
-                   transaction_count,
                    experiment_type):
 
     # cleanup
@@ -441,8 +324,8 @@ def run_experiment(program,
 
     subprocess.call([program,
                      "-e", str(experiment_type),
-                     "-k", str(scale_factor),
-                     "-t", str(transaction_count)])
+                     "-k", str(SCALE_FACTOR),
+                     "-t", str(TRANSACTION_COUNT)])
 
 
 # COLLECT STATS
@@ -496,7 +379,7 @@ def collect_stats(result_dir,
             tile_group_count = data[2]
 
         # MAKE RESULTS FILE DIR
-        if category == PROJECTIVITY_EXPERIMENT:
+        if category == WORKLOAD_EXPERIMENT:
             result_directory = result_dir + "/" + layout + "/" + operator + "/" + column_count + "/" + write_ratio
 
         if not os.path.exists(result_directory):
@@ -506,61 +389,26 @@ def collect_stats(result_dir,
         result_file = open(file_name, "a")
 
         # WRITE OUT STATS
-        if category == PROJECTIVITY_EXPERIMENT:
+        if category == WORKLOAD_EXPERIMENT:
             result_file.write(str(projectivity) + " , " + str(stat) + "\n")
 
-        result_file.close()
-
-# COLLECT STATS
-def collect_ycsb_stats(result_dir,
-                       result_file_name):
-
-    fp = open(OUTPUT_FILE)
-    lines = fp.readlines()
-    fp.close()
-
-    for line in lines:
-        data = line.split()
-
-        # Collect info
-        layout = data[0]
-        operator = data[1]
-        column_count = data[2]
-        stat = data[3]
-
-        if(layout == "0"):
-            layout = "row"
-        elif(layout == "1"):
-            layout = "column"
-        elif(layout == "2"):
-            layout = "hybrid"
-
-        result_directory = result_dir + "/" + layout + "/" + column_count
-
-        if not os.path.exists(result_directory):
-            os.makedirs(result_directory)
-        file_name = result_directory + "/" + result_file_name
-
-        result_file = open(file_name, "a")
-        result_file.write(str(operator) + " , " + str(stat) + "\n")
         result_file.close()
 
 ###################################################################################
 # EVAL
 ###################################################################################
 
-# PROJECTIVITY -- EVAL
-def projectivity_eval():
+# WORKLOAD -- EVAL
+def workload_eval():
 
     # CLEAN UP RESULT DIR
-    clean_up_dir(PROJECTIVITY_DIR)
+    clean_up_dir(WORKLOAD_DIR)
 
     # RUN EXPERIMENT
-    run_experiment(HYADAPT, SCALE_FACTOR,
-                   TRANSACTION_COUNT, PROJECTIVITY_EXPERIMENT)
+    run_experiment(LOGGING, WORKLOAD_EXPERIMENT)
 
     # COLLECT STATS
-    collect_stats(PROJECTIVITY_DIR, "projectivity.csv", PROJECTIVITY_EXPERIMENT)
+    collect_stats(WORKLOAD_DIR, "workload.csv", WORKLOAD_EXPERIMENT)
 
 ###################################################################################
 # MAIN
@@ -569,15 +417,15 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Run Tilegroup Experiments')
 
-    parser.add_argument("-p", "--projectivity", help='eval projectivity', action='store_true')
+    parser.add_argument("-w", "--workload", help='eval workload', action='store_true')
 
-    parser.add_argument("-a", "--projectivity_plot", help='plot projectivity', action='store_true')
+    parser.add_argument("-a", "--workload_plot", help='plot workload', action='store_true')
 
     args = parser.parse_args()
 
-    if args.projectivity:
-        projectivity_eval()
+    if args.workload:
+        workload_eval()
 
-    if args.projectivity_plot:
-        projectivity_plot()
+    if args.workload_plot:
+        workload_plot()
 
