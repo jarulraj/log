@@ -135,15 +135,13 @@ OUTPUT_FILE = "outputfile.summary"
 
 WORKLOAD_DIR = BASE_DIR + "/results/workload/"
 
-LAYOUTS = ("row", "column", "hybrid")
-OPERATORS = ("direct", "aggregate")
-REORG_LAYOUTS = ("row", "hybrid")
-
-SCALE_FACTOR = 100.0
-
 WORKLOAD_COUNT = (10, 20, 50, 100)
+COLUMN_COUNTS = (5, 10, 20, 50)
 
-TRANSACTION_COUNT = 3
+LOGGING_TYPES = (0, 1, 2)
+LOGGING_NAMES = ("WAL", "WBL", "NONE")
+
+TUPLE_COUNT = 10000
 
 WORKLOAD_EXPERIMENT = 1
 
@@ -172,9 +170,6 @@ def loadDataFile(n_rows, n_cols, path):
         row_num += 1
 
     return data
-
-def next_power_of_10(n):
-    return (10 ** math.ceil(math.log(n, 10)))
 
 def get_upper_bound(n):
     return (math.ceil(n / YAXIS_ROUND) * YAXIS_ROUND)
@@ -212,51 +207,45 @@ def create_workload_bar_chart(datasets):
     fig = plot.figure()
     ax1 = fig.add_subplot(111)
 
-    x_values = WORKLOAD
+    # X-AXIS
+    x_values = COLUMN_COUNTS
     N = len(x_values)
-    x_labels = WORKLOAD
+    x_labels = x_values
 
-    layouts = ["NSM", "DSM", "FSM"]
-
+    num_items = len(LOGGING_TYPES);
     ind = np.arange(N)
-    margin = 0.15
-    width = ((1.0 - 2 * margin) / N)
-    bars = [None] * len(layouts) * N
+    idx = 0
 
     print(datasets)
 
-    for group in xrange(len(datasets)):
-        # GROUP
-        latencies = []
+    # GROUP
+    for group_index, group in enumerate(LOGGING_TYPES):
+        group_data = []
 
-        for line in  xrange(len(datasets[group])):
-            for col in  xrange(len(datasets[group][line])):
-                if col == 1:
-                    latencies.append(datasets[group][line][col])
+        # LINE
+        for line_index, line in enumerate(x_values):
+            group_data.append(datasets[group_index][line_index][1])
 
-        LOG.info("%s group_data = %s ", layouts, str(latencies))
+        LOG.info("%s group_data = %s ", group, str(group_data))
 
-        bars[group] = ax1.bar(ind + margin + (group * width), latencies, width,
-                              color=OPT_COLORS[group],
-                              hatch=OPT_PATTERNS[group*2],
-                              linewidth=BAR_LINEWIDTH)
+        ax1.plot(x_values, group_data, color=OPT_LINE_COLORS[idx], linewidth=OPT_LINE_WIDTH,
+                 marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, label=str(group))
 
+        idx = idx + 1
 
     # GRID
     axes = ax1.get_axes()
-    #axes.set_ylim(0.01, 1000000)
     makeGrid(ax1)
 
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Execution time (ms)", fontproperties=LABEL_FP)
-    #ax1.set_ylim([YAXIS_MIN, YAXIS_MAX])
+    #ax1.set_yscale('log', basey=2)
 
     # X-AXIS
-    ax1.set_xlabel("Fraction of Attributes Projected", fontproperties=LABEL_FP)
-    ax1.set_xticklabels(x_labels)
-    ax1.set_xticks(ind + 0.5)
+    ax1.set_xlabel("Tuple width", fontproperties=LABEL_FP)
+    #ax1.set_xticklabels(x_labels)
 
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
@@ -272,37 +261,20 @@ def create_workload_bar_chart(datasets):
 # WORKLOAD -- PLOT
 def workload_plot():
 
-    column_count_type = 0
-    for column_count in COLUMN_COUNTS:
-        column_count_type = column_count_type + 1
+    datasets = []
 
-        for write_ratio in WRITE_RATIOS:
+    for logging_name in LOGGING_NAMES:
 
-            for operator in OPERATORS:
-                print(operator)
-                datasets = []
+        data_file = WORKLOAD_DIR + "/" + logging_name + "/" + "workload.csv"
 
-                for layout in LAYOUTS:
-                    data_file = WORKLOAD_DIR + "/" + layout + "/" + operator + "/" + str(column_count) + "/" + str(write_ratio) + "/" + "projectivity.csv"
+        dataset = loadDataFile(len(COLUMN_COUNTS), 2, data_file)
+        datasets.append(dataset)
 
-                    dataset = loadDataFile(4, 2, data_file)
-                    datasets.append(dataset)
+    fig = create_workload_bar_chart(datasets)
 
-                fig = create_projectivity_bar_chart(datasets)
+    fileName = "workload.pdf"
 
-                if write_ratio == 0:
-                    write_mix = "rd"
-                else:
-                    write_mix = "rw"
-
-                if column_count_type == 1:
-                    table_type = "narrow"
-                else:
-                    table_type = "wide"
-
-                fileName = "workload-" + operator + "-" + table_type + "-" + write_mix + ".pdf"
-
-                saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 ###################################################################################
 # EVAL HELPERS
@@ -317,15 +289,18 @@ def clean_up_dir(result_directory):
 
 # RUN EXPERIMENT
 def run_experiment(program,
-                   experiment_type):
+                   experiment_type,
+                   column_count,
+                   logging_type):
 
     # cleanup
     subprocess.call(["rm -f " + OUTPUT_FILE], shell=True)
 
     subprocess.call([program,
                      "-e", str(experiment_type),
-                     "-k", str(SCALE_FACTOR),
-                     "-t", str(TRANSACTION_COUNT)])
+                     "-t", str(TUPLE_COUNT),
+                     "-l", str(logging_type),
+                     "-z", str(column_count)])
 
 
 # COLLECT STATS
@@ -341,46 +316,22 @@ def collect_stats(result_dir,
         data = line.split()
 
         # Collect info
-        if category != DISTRIBUTION_EXPERIMENT:
-            layout = data[0]
-            operator = data[1]
-            selectivity = data[2]
-            projectivity = data[3]
-            column_count = data[4]
-            write_ratio = data[5]
-            subset_experiment_type = data[6]
-            access_num_group = data[7]
-            subset_ratio = data[8]
-            tuples_per_tg = data[9]
-            txn_itr = data[10]
-            theta = data[11]
-            split_point = data[12]
-            sample_weight = data[13]
-            scale_factor = data[14]
-            stat = data[15]
+        logging_type = data[0]
+        column_count = data[1]
+        backend_count = data[2]
+        
+        stat = data[3]
 
-            if(layout == "0"):
-                layout = "row"
-            elif(layout == "1"):
-                layout = "column"
-            elif(layout == "2"):
-                layout = "hybrid"
-
-            if(operator == "1"):
-                operator = "direct"
-            elif(operator == "2"):
-                operator = "aggregate"
-            elif(operator == "3"):
-                operator = "arithmetic"
-        # Dist experiment
-        else:
-            query_itr = data[0]
-            tile_group_type = data[1]
-            tile_group_count = data[2]
+        if(logging_type == "0"):
+            logging_name = LOGGING_NAMES[0]
+        elif(logging_type == "1"):
+            logging_name = LOGGING_NAMES[1]
+        elif(logging_type == "2"):
+            logging_name = LOGGING_NAMES[2]
 
         # MAKE RESULTS FILE DIR
         if category == WORKLOAD_EXPERIMENT:
-            result_directory = result_dir + "/" + layout + "/" + operator + "/" + column_count + "/" + write_ratio
+            result_directory = result_dir + "/" + logging_name
 
         if not os.path.exists(result_directory):
             os.makedirs(result_directory)
@@ -390,8 +341,8 @@ def collect_stats(result_dir,
 
         # WRITE OUT STATS
         if category == WORKLOAD_EXPERIMENT:
-            result_file.write(str(projectivity) + " , " + str(stat) + "\n")
-
+            result_file.write(str(column_count) + " , " + str(stat) + "\n")
+            
         result_file.close()
 
 ###################################################################################
@@ -404,11 +355,14 @@ def workload_eval():
     # CLEAN UP RESULT DIR
     clean_up_dir(WORKLOAD_DIR)
 
-    # RUN EXPERIMENT
-    run_experiment(LOGGING, WORKLOAD_EXPERIMENT)
+    for logging_type in LOGGING_TYPES:        
+        for column_count in COLUMN_COUNTS:
 
-    # COLLECT STATS
-    collect_stats(WORKLOAD_DIR, "workload.csv", WORKLOAD_EXPERIMENT)
+            # RUN EXPERIMENT            
+            run_experiment(LOGGING, WORKLOAD_EXPERIMENT, column_count, logging_type)
+
+            # COLLECT STATS
+            collect_stats(WORKLOAD_DIR, "workload.csv", WORKLOAD_EXPERIMENT)
 
 ###################################################################################
 # MAIN
