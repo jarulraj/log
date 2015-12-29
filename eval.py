@@ -134,16 +134,24 @@ LOGGING = PELOTON_BUILD_DIR + "/tests/logging_test"
 OUTPUT_FILE = "outputfile.summary"
 
 WORKLOAD_DIR = BASE_DIR + "/results/workload/"
+RECOVERY_DIR = BASE_DIR + "/results/recovery/"
 
 WORKLOAD_COUNT = (10, 20, 50, 100)
 COLUMN_COUNTS = (5, 10, 20, 50)
+TUPLE_COUNTS = (10, 100, 1000, 10000)
 
 LOGGING_TYPES = (0, 1, 2)
-LOGGING_NAMES = ("WAL", "WBL", "NONE")
+LOGGING_NAMES = ("NONE", "WAL", "WBL")
+
+# Skip no logging
+LOGGING_TYPES_SUBSET = (1, 2)   
+LOGGING_NAMES_SUBSET = ("WAL", "WBL")
 
 TUPLE_COUNT = 10000
+COLUMN_COUNT = 20
 
 WORKLOAD_EXPERIMENT = 1
+RECOVERY_EXPERIMENT = 2
 
 ###################################################################################
 # UTILS
@@ -252,6 +260,55 @@ def create_workload_bar_chart(datasets):
 
     return (fig)
 
+def create_recovery_bar_chart(datasets):
+    fig = plot.figure()
+    ax1 = fig.add_subplot(111)
+
+    # X-AXIS
+    x_values = np.arange(len(TUPLE_COUNTS))
+    N = len(x_values)
+    x_labels = [str(i) for i in TUPLE_COUNTS]
+
+    num_items = len(LOGGING_TYPES);
+    ind = np.arange(N)
+    idx = 0
+
+    # GROUP
+    for group_index, group in enumerate(LOGGING_TYPES_SUBSET):
+        group_data = []
+
+        # LINE
+        for line_index, line in enumerate(x_values):
+            group_data.append(datasets[group_index][line_index][1])
+
+        LOG.info("%s group_data = %s ", group, str(group_data))
+
+        ax1.plot(x_values, group_data, color=OPT_LINE_COLORS[idx], linewidth=OPT_LINE_WIDTH,
+                 marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, label=str(group))
+
+        idx = idx + 1
+
+    # GRID
+    axes = ax1.get_axes()
+    makeGrid(ax1)
+
+    # Y-AXIS
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
+    ax1.minorticks_off()
+    ax1.set_ylabel("Execution time (ms)", fontproperties=LABEL_FP)
+    #ax1.set_yscale('log', basey=2)
+
+    # X-AXIS
+    ax1.set_xlabel("Number of transactions", fontproperties=LABEL_FP)
+    plot.xticks(x_values, x_labels)
+
+    for label in ax1.get_yticklabels() :
+        label.set_fontproperties(TICK_FP)
+    for label in ax1.get_xticklabels() :
+        label.set_fontproperties(TICK_FP)
+
+    return (fig)
+
 ###################################################################################
 # PLOT HELPERS
 ###################################################################################
@@ -274,6 +331,24 @@ def workload_plot():
 
     saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
+# RECOVERY -- PLOT
+def recovery_plot():
+
+    datasets = []
+
+    for logging_name in LOGGING_NAMES_SUBSET:
+
+        data_file = RECOVERY_DIR + "/" + logging_name + "/" + "recovery.csv"
+
+        dataset = loadDataFile(len(TUPLE_COUNTS), 2, data_file)
+        datasets.append(dataset)
+
+    fig = create_recovery_bar_chart(datasets)
+
+    fileName = "recovery.pdf"
+
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+
 ###################################################################################
 # EVAL HELPERS
 ###################################################################################
@@ -289,6 +364,7 @@ def clean_up_dir(result_directory):
 def run_experiment(program,
                    experiment_type,
                    column_count,
+                   tuple_count,
                    logging_type):
 
     # cleanup
@@ -296,7 +372,7 @@ def run_experiment(program,
 
     subprocess.call([program,
                      "-e", str(experiment_type),
-                     "-t", str(TUPLE_COUNT),
+                     "-t", str(tuple_count),
                      "-l", str(logging_type),
                      "-z", str(column_count)])
 
@@ -328,7 +404,7 @@ def collect_stats(result_dir,
             logging_name = LOGGING_NAMES[2]
 
         # MAKE RESULTS FILE DIR
-        if category == WORKLOAD_EXPERIMENT:
+        if category == WORKLOAD_EXPERIMENT or category == RECOVERY_EXPERIMENT:
             result_directory = result_dir + "/" + logging_name
 
         if not os.path.exists(result_directory):
@@ -338,7 +414,7 @@ def collect_stats(result_dir,
         result_file = open(file_name, "a")
 
         # WRITE OUT STATS
-        if category == WORKLOAD_EXPERIMENT:
+        if category == WORKLOAD_EXPERIMENT or category == RECOVERY_EXPERIMENT:
             result_file.write(str(column_count) + " , " + str(stat) + "\n")
             
         result_file.close()
@@ -353,14 +429,34 @@ def workload_eval():
     # CLEAN UP RESULT DIR
     clean_up_dir(WORKLOAD_DIR)
 
+    tuple_count = TUPLE_COUNT
+
     for logging_type in LOGGING_TYPES:        
         for column_count in COLUMN_COUNTS:
 
             # RUN EXPERIMENT            
-            run_experiment(LOGGING, WORKLOAD_EXPERIMENT, column_count, logging_type)
+            run_experiment(LOGGING, WORKLOAD_EXPERIMENT, column_count, tuple_count, logging_type)
 
             # COLLECT STATS
             collect_stats(WORKLOAD_DIR, "workload.csv", WORKLOAD_EXPERIMENT)
+
+# RECOVERY -- EVAL
+def recovery_eval():
+
+    # CLEAN UP RESULT DIR
+    clean_up_dir(RECOVERY_DIR)
+    
+    column_count = COLUMN_COUNT
+
+    for logging_type in LOGGING_TYPES_SUBSET:        
+        for tuple_count in TUPLE_COUNTS:
+
+            # RUN EXPERIMENT            
+            run_experiment(LOGGING, RECOVERY_EXPERIMENT, column_count, tuple_count, logging_type)
+
+            # COLLECT STATS
+            collect_stats(RECOVERY_DIR, "recovery.csv", RECOVERY_EXPERIMENT)
+            
 
 ###################################################################################
 # MAIN
@@ -370,14 +466,21 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run Tilegroup Experiments')
 
     parser.add_argument("-w", "--workload", help='eval workload', action='store_true')
+    parser.add_argument("-r", "--recovery", help='eval recovery', action='store_true')
 
     parser.add_argument("-a", "--workload_plot", help='plot workload', action='store_true')
+    parser.add_argument("-b", "--recovery_plot", help='plot recovery', action='store_true')
 
     args = parser.parse_args()
 
     if args.workload:
         workload_eval()
 
+    if args.recovery:
+        recovery_eval()
+
     if args.workload_plot:
         workload_plot()
 
+    if args.recovery_plot:
+        recovery_plot()
