@@ -135,6 +135,7 @@ OUTPUT_FILE = "outputfile.summary"
 
 WORKLOAD_DIR = BASE_DIR + "/results/workload/"
 RECOVERY_DIR = BASE_DIR + "/results/recovery/"
+STORAGE_DIR = BASE_DIR + "/results/storage/"
 
 WORKLOAD_COUNT = (10, 20, 50, 100)
 COLUMN_COUNTS = (5, 10, 20, 50)
@@ -152,6 +153,7 @@ COLUMN_COUNT = 20
 
 WORKLOAD_EXPERIMENT = 1
 RECOVERY_EXPERIMENT = 2
+STORAGE_EXPERIMENT = 3
 
 ###################################################################################
 # UTILS
@@ -220,7 +222,6 @@ def create_workload_bar_chart(datasets):
     N = len(x_values)
     x_labels = [str(i) for i in COLUMN_COUNTS]
 
-    num_items = len(LOGGING_TYPES);
     ind = np.arange(N)
     idx = 0
 
@@ -247,7 +248,6 @@ def create_workload_bar_chart(datasets):
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Execution time (ms)", fontproperties=LABEL_FP)
-    #ax1.set_yscale('log', basey=2)
 
     # X-AXIS
     ax1.set_xlabel("Tuple width", fontproperties=LABEL_FP)
@@ -269,7 +269,6 @@ def create_recovery_bar_chart(datasets):
     N = len(x_values)
     x_labels = [str(i) for i in TUPLE_COUNTS]
 
-    num_items = len(LOGGING_TYPES);
     ind = np.arange(N)
     idx = 0
 
@@ -296,7 +295,54 @@ def create_recovery_bar_chart(datasets):
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Execution time (ms)", fontproperties=LABEL_FP)
-    #ax1.set_yscale('log', basey=2)
+
+    # X-AXIS
+    ax1.set_xlabel("Number of transactions", fontproperties=LABEL_FP)
+    plot.xticks(x_values, x_labels)
+
+    for label in ax1.get_yticklabels() :
+        label.set_fontproperties(TICK_FP)
+    for label in ax1.get_xticklabels() :
+        label.set_fontproperties(TICK_FP)
+
+    return (fig)
+
+def create_storage_bar_chart(datasets):
+    fig = plot.figure()
+    ax1 = fig.add_subplot(111)
+
+    # X-AXIS
+    x_values = np.arange(len(TUPLE_COUNTS))
+    N = len(x_values)
+    x_labels = [str(i) for i in TUPLE_COUNTS]
+
+    ind = np.arange(N)
+    idx = 0
+
+    # GROUP
+    for group_index, group in enumerate(LOGGING_TYPES_SUBSET):
+        group_data = []
+
+        # LINE
+        for line_index, line in enumerate(x_values):
+            group_data.append(datasets[group_index][line_index][1])
+
+        LOG.info("%s group_data = %s ", group, str(group_data))
+
+        ax1.plot(x_values, group_data, color=OPT_LINE_COLORS[idx], linewidth=OPT_LINE_WIDTH,
+                 marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, label=str(group))
+
+        idx = idx + 1
+
+    # GRID
+    axes = ax1.get_axes()
+    makeGrid(ax1)
+
+    # Y-AXIS
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
+    ax1.minorticks_off()
+    ax1.set_ylabel("Log Storage Footprint (B)", fontproperties=LABEL_FP)
+    ax1.set_yscale('log', basey=10)
 
     # X-AXIS
     ax1.set_xlabel("Number of transactions", fontproperties=LABEL_FP)
@@ -349,6 +395,24 @@ def recovery_plot():
 
     saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
+# STORAGE -- PLOT
+def storage_plot():
+
+    datasets = []
+
+    for logging_name in LOGGING_NAMES_SUBSET:
+
+        data_file = STORAGE_DIR + "/" + logging_name + "/" + "storage.csv"
+
+        dataset = loadDataFile(len(TUPLE_COUNTS), 2, data_file)
+        datasets.append(dataset)
+
+    fig = create_storage_bar_chart(datasets)
+
+    fileName = "storage.pdf"
+
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+    
 ###################################################################################
 # EVAL HELPERS
 ###################################################################################
@@ -404,7 +468,7 @@ def collect_stats(result_dir,
             logging_name = LOGGING_NAMES[2]
 
         # MAKE RESULTS FILE DIR
-        if category == WORKLOAD_EXPERIMENT or category == RECOVERY_EXPERIMENT:
+        if category == WORKLOAD_EXPERIMENT or category == RECOVERY_EXPERIMENT or category == STORAGE_EXPERIMENT:
             result_directory = result_dir + "/" + logging_name
 
         if not os.path.exists(result_directory):
@@ -414,7 +478,7 @@ def collect_stats(result_dir,
         result_file = open(file_name, "a")
 
         # WRITE OUT STATS
-        if category == WORKLOAD_EXPERIMENT or category == RECOVERY_EXPERIMENT:
+        if category == WORKLOAD_EXPERIMENT or category == RECOVERY_EXPERIMENT or category == STORAGE_EXPERIMENT:
             result_file.write(str(column_count) + " , " + str(stat) + "\n")
             
         result_file.close()
@@ -456,6 +520,23 @@ def recovery_eval():
 
             # COLLECT STATS
             collect_stats(RECOVERY_DIR, "recovery.csv", RECOVERY_EXPERIMENT)
+
+# STORAGE -- EVAL
+def storage_eval():
+
+    # CLEAN UP RESULT DIR
+    clean_up_dir(STORAGE_DIR)
+    
+    column_count = COLUMN_COUNT
+
+    for logging_type in LOGGING_TYPES_SUBSET:        
+        for tuple_count in TUPLE_COUNTS:
+
+            # RUN EXPERIMENT            
+            run_experiment(LOGGING, STORAGE_EXPERIMENT, column_count, tuple_count, logging_type)
+
+            # COLLECT STATS
+            collect_stats(STORAGE_DIR, "storage.csv", STORAGE_EXPERIMENT)
             
 
 ###################################################################################
@@ -467,20 +548,32 @@ if __name__ == '__main__':
 
     parser.add_argument("-w", "--workload", help='eval workload', action='store_true')
     parser.add_argument("-r", "--recovery", help='eval recovery', action='store_true')
+    parser.add_argument("-s", "--storage", help='eval storage', action='store_true')
 
     parser.add_argument("-a", "--workload_plot", help='plot workload', action='store_true')
     parser.add_argument("-b", "--recovery_plot", help='plot recovery', action='store_true')
+    parser.add_argument("-c", "--storage_plot", help='plot recovery', action='store_true')
 
     args = parser.parse_args()
 
+    ## EVAL
+    
     if args.workload:
         workload_eval()
 
     if args.recovery:
         recovery_eval()
 
+    if args.storage:
+        storage_eval()
+
+    ## PLOT
+
     if args.workload_plot:
         workload_plot()
 
     if args.recovery_plot:
         recovery_plot()
+
+    if args.storage_plot:
+        storage_plot()
