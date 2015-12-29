@@ -208,15 +208,13 @@ def create_workload_bar_chart(datasets):
     ax1 = fig.add_subplot(111)
 
     # X-AXIS
-    x_values = COLUMN_COUNTS
+    x_values = np.arange(len(COLUMN_COUNTS))
     N = len(x_values)
-    x_labels = x_values
+    x_labels = [str(i) for i in COLUMN_COUNTS]
 
     num_items = len(LOGGING_TYPES);
     ind = np.arange(N)
     idx = 0
-
-    print(datasets)
 
     # GROUP
     for group_index, group in enumerate(LOGGING_TYPES):
@@ -245,7 +243,7 @@ def create_workload_bar_chart(datasets):
 
     # X-AXIS
     ax1.set_xlabel("Tuple width", fontproperties=LABEL_FP)
-    #ax1.set_xticklabels(x_labels)
+    plot.xticks(x_values, x_labels)
 
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
