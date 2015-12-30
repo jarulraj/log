@@ -139,7 +139,7 @@ STORAGE_DIR = BASE_DIR + "/results/storage/"
 
 WORKLOAD_COUNT = (10, 20, 50, 100)
 COLUMN_COUNTS = (5, 10, 20, 50)
-TUPLE_COUNTS = (10, 100, 1000, 10000)
+TUPLE_COUNTS = (100, 1000, 10000)
 
 LOGGING_TYPES = (0, 1, 2)
 LOGGING_NAMES = ("NONE", "WAL", "WBL")
@@ -148,8 +148,8 @@ LOGGING_NAMES = ("NONE", "WAL", "WBL")
 LOGGING_TYPES_SUBSET = (1, 2)   
 LOGGING_NAMES_SUBSET = ("WAL", "WBL")
 
-TUPLE_COUNT = 10000
-COLUMN_COUNT = 20
+DEFAULT_TUPLE_COUNT = 100000
+DEFAULT_COLUMN_COUNT = 20
 
 WORKLOAD_EXPERIMENT = 1
 RECOVERY_EXPERIMENT = 2
@@ -270,7 +270,7 @@ def create_recovery_bar_chart(datasets):
     x_labels = [str(i) for i in TUPLE_COUNTS]
 
     ind = np.arange(N)
-    idx = 0
+    idx = 1
 
     # GROUP
     for group_index, group in enumerate(LOGGING_TYPES_SUBSET):
@@ -317,7 +317,7 @@ def create_storage_bar_chart(datasets):
     x_labels = [str(i) for i in TUPLE_COUNTS]
 
     ind = np.arange(N)
-    idx = 0
+    idx = 1
 
     # GROUP
     for group_index, group in enumerate(LOGGING_TYPES_SUBSET):
@@ -380,38 +380,40 @@ def workload_plot():
 # RECOVERY -- PLOT
 def recovery_plot():
 
-    datasets = []
+    for column_count in COLUMN_COUNTS:
+        datasets = []
+        
+        for logging_name in LOGGING_NAMES_SUBSET:
 
-    for logging_name in LOGGING_NAMES_SUBSET:
+            data_file = RECOVERY_DIR + "/" + logging_name + "/" + str(column_count) + "/" + "recovery.csv"
 
-        data_file = RECOVERY_DIR + "/" + logging_name + "/" + "recovery.csv"
+            dataset = loadDataFile(len(TUPLE_COUNTS), 2, data_file)
+            datasets.append(dataset)
 
-        dataset = loadDataFile(len(TUPLE_COUNTS), 2, data_file)
-        datasets.append(dataset)
+        fig = create_recovery_bar_chart(datasets)
 
-    fig = create_recovery_bar_chart(datasets)
+        fileName = "recovery-" + str(column_count) + ".pdf"
 
-    fileName = "recovery.pdf"
-
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 # STORAGE -- PLOT
 def storage_plot():
 
-    datasets = []
+    for column_count in COLUMN_COUNTS:
+        datasets = []
 
-    for logging_name in LOGGING_NAMES_SUBSET:
-
-        data_file = STORAGE_DIR + "/" + logging_name + "/" + "storage.csv"
-
-        dataset = loadDataFile(len(TUPLE_COUNTS), 2, data_file)
-        datasets.append(dataset)
-
-    fig = create_storage_bar_chart(datasets)
-
-    fileName = "storage.pdf"
-
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+        for logging_name in LOGGING_NAMES_SUBSET:
+    
+            data_file = STORAGE_DIR + "/" + logging_name + "/" + str(column_count) + "/" + "storage.csv"
+    
+            dataset = loadDataFile(len(TUPLE_COUNTS), 2, data_file)
+            datasets.append(dataset)
+    
+        fig = create_storage_bar_chart(datasets)
+    
+        fileName = "storage-" + str(column_count) + ".pdf"
+    
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
     
 ###################################################################################
 # EVAL HELPERS
@@ -456,9 +458,10 @@ def collect_stats(result_dir,
         # Collect info
         logging_type = data[0]
         column_count = data[1]
-        backend_count = data[2]
+        tuple_count = data[2]
+        backend_count = data[3]
         
-        stat = data[3]
+        stat = data[4]
 
         if(logging_type == "0"):
             logging_name = LOGGING_NAMES[0]
@@ -468,8 +471,10 @@ def collect_stats(result_dir,
             logging_name = LOGGING_NAMES[2]
 
         # MAKE RESULTS FILE DIR
-        if category == WORKLOAD_EXPERIMENT or category == RECOVERY_EXPERIMENT or category == STORAGE_EXPERIMENT:
+        if category == WORKLOAD_EXPERIMENT:
             result_directory = result_dir + "/" + logging_name
+        elif category == RECOVERY_EXPERIMENT or category == STORAGE_EXPERIMENT:
+            result_directory = result_dir + "/" + logging_name + "/" + str(column_count)
 
         if not os.path.exists(result_directory):
             os.makedirs(result_directory)
@@ -478,8 +483,10 @@ def collect_stats(result_dir,
         result_file = open(file_name, "a")
 
         # WRITE OUT STATS
-        if category == WORKLOAD_EXPERIMENT or category == RECOVERY_EXPERIMENT or category == STORAGE_EXPERIMENT:
+        if category == WORKLOAD_EXPERIMENT:
             result_file.write(str(column_count) + " , " + str(stat) + "\n")
+        elif category == RECOVERY_EXPERIMENT or category == STORAGE_EXPERIMENT:
+            result_file.write(str(tuple_count) + " , " + str(stat) + "\n")            
             
         result_file.close()
 
@@ -493,7 +500,7 @@ def workload_eval():
     # CLEAN UP RESULT DIR
     clean_up_dir(WORKLOAD_DIR)
 
-    tuple_count = TUPLE_COUNT
+    tuple_count = DEFAULT_TUPLE_COUNT
 
     for logging_type in LOGGING_TYPES:        
         for column_count in COLUMN_COUNTS:
@@ -510,16 +517,15 @@ def recovery_eval():
     # CLEAN UP RESULT DIR
     clean_up_dir(RECOVERY_DIR)
     
-    column_count = COLUMN_COUNT
-
     for logging_type in LOGGING_TYPES_SUBSET:        
         for tuple_count in TUPLE_COUNTS:
+            for column_count in COLUMN_COUNTS:
 
-            # RUN EXPERIMENT            
-            run_experiment(LOGGING, RECOVERY_EXPERIMENT, column_count, tuple_count, logging_type)
-
-            # COLLECT STATS
-            collect_stats(RECOVERY_DIR, "recovery.csv", RECOVERY_EXPERIMENT)
+                # RUN EXPERIMENT            
+                run_experiment(LOGGING, RECOVERY_EXPERIMENT, column_count, tuple_count, logging_type)
+    
+                # COLLECT STATS
+                collect_stats(RECOVERY_DIR, "recovery.csv", RECOVERY_EXPERIMENT)
 
 # STORAGE -- EVAL
 def storage_eval():
@@ -527,16 +533,15 @@ def storage_eval():
     # CLEAN UP RESULT DIR
     clean_up_dir(STORAGE_DIR)
     
-    column_count = COLUMN_COUNT
-
     for logging_type in LOGGING_TYPES_SUBSET:        
         for tuple_count in TUPLE_COUNTS:
+            for column_count in COLUMN_COUNTS:
 
-            # RUN EXPERIMENT            
-            run_experiment(LOGGING, STORAGE_EXPERIMENT, column_count, tuple_count, logging_type)
-
-            # COLLECT STATS
-            collect_stats(STORAGE_DIR, "storage.csv", STORAGE_EXPERIMENT)
+                # RUN EXPERIMENT            
+                run_experiment(LOGGING, STORAGE_EXPERIMENT, column_count, tuple_count, logging_type)
+    
+                # COLLECT STATS
+                collect_stats(STORAGE_DIR, "storage.csv", STORAGE_EXPERIMENT)
             
 
 ###################################################################################
