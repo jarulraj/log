@@ -161,6 +161,9 @@ NVM_LATENCIES = ("160", "320", "480")
 DEFAULT_NVM_LATENCY = NVM_LATENCIES[0]
 ENABLE_SDV = False
 
+PMEM_FILE_DIR = "/mnt/pmfs/peloton/"
+PMEM_FILE_SIZE = 512
+
 ###################################################################################
 # UTILS
 ###################################################################################
@@ -449,7 +452,9 @@ def run_experiment(program,
                      "-e", str(experiment_type),
                      "-t", str(tuple_count),
                      "-l", str(logging_type),
-                     "-z", str(column_count)])
+                     "-z", str(column_count),
+                     "-d", str(PMEM_FILE_DIR),
+                     "-f", str(PMEM_FILE_SIZE)])
 
 
 # COLLECT STATS
