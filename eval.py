@@ -148,12 +148,18 @@ LOGGING_NAMES = ("NONE", "WAL", "WBL")
 LOGGING_TYPES_SUBSET = (1, 2)   
 LOGGING_NAMES_SUBSET = ("WAL", "WBL")
 
-DEFAULT_TUPLE_COUNT = 100000
+DEFAULT_TUPLE_COUNT = 10000
 DEFAULT_COLUMN_COUNT = 20
 
 WORKLOAD_EXPERIMENT = 1
 RECOVERY_EXPERIMENT = 2
 STORAGE_EXPERIMENT = 3
+
+SDV_DIR = "/data/devel/sdv-tools/sdv-release"
+SDV_SCRIPT = SDV_DIR + "/ivt_pm_sdv.sh"    
+NVM_LATENCIES = ("160", "320", "480")
+DEFAULT_NVM_LATENCY = NVM_LATENCIES[0]
+ENABLE_SDV = False
 
 ###################################################################################
 # UTILS
@@ -362,39 +368,42 @@ def create_storage_bar_chart(datasets):
 # WORKLOAD -- PLOT
 def workload_plot():
 
-    datasets = []
+    for nvm_latency in NVM_LATENCIES:
+        datasets = []
 
-    for logging_name in LOGGING_NAMES:
+        for logging_name in LOGGING_NAMES:
 
-        data_file = WORKLOAD_DIR + "/" + logging_name + "/" + "workload.csv"
+            data_file = WORKLOAD_DIR + "/" + logging_name + "/" + str(nvm_latency) + "/" + "workload.csv"
+    
+            dataset = loadDataFile(len(COLUMN_COUNTS), 2, data_file)
+            datasets.append(dataset)
 
-        dataset = loadDataFile(len(COLUMN_COUNTS), 2, data_file)
-        datasets.append(dataset)
-
-    fig = create_workload_bar_chart(datasets)
-
-    fileName = "workload.pdf"
-
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+        fig = create_workload_bar_chart(datasets)
+    
+        fileName = "workload-" + str(nvm_latency) + ".pdf"
+    
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 # RECOVERY -- PLOT
 def recovery_plot():
 
-    for column_count in COLUMN_COUNTS:
-        datasets = []
-        
-        for logging_name in LOGGING_NAMES_SUBSET:
+    for nvm_latency in NVM_LATENCIES:
 
-            data_file = RECOVERY_DIR + "/" + logging_name + "/" + str(column_count) + "/" + "recovery.csv"
-
-            dataset = loadDataFile(len(TUPLE_COUNTS), 2, data_file)
-            datasets.append(dataset)
-
-        fig = create_recovery_bar_chart(datasets)
-
-        fileName = "recovery-" + str(column_count) + ".pdf"
-
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+        for column_count in COLUMN_COUNTS:
+            datasets = []
+            
+            for logging_name in LOGGING_NAMES_SUBSET:
+    
+                data_file = RECOVERY_DIR + "/" + logging_name + "/" + str(nvm_latency) + "/" + str(column_count) + "/" + "recovery.csv"
+    
+                dataset = loadDataFile(len(TUPLE_COUNTS), 2, data_file)
+                datasets.append(dataset)
+    
+            fig = create_recovery_bar_chart(datasets)
+    
+            fileName = "recovery-" + str(nvm_latency) + "-" + str(column_count) + ".pdf"
+    
+            saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 # STORAGE -- PLOT
 def storage_plot():
@@ -446,7 +455,8 @@ def run_experiment(program,
 # COLLECT STATS
 def collect_stats(result_dir,
                   result_file_name,
-                  category):
+                  category,
+                  nvm_latency):
 
     fp = open(OUTPUT_FILE)
     lines = fp.readlines()
@@ -472,8 +482,10 @@ def collect_stats(result_dir,
 
         # MAKE RESULTS FILE DIR
         if category == WORKLOAD_EXPERIMENT:
-            result_directory = result_dir + "/" + logging_name
-        elif category == RECOVERY_EXPERIMENT or category == STORAGE_EXPERIMENT:
+            result_directory = result_dir + "/" + logging_name + "/" + str(nvm_latency)
+        elif category == RECOVERY_EXPERIMENT:
+            result_directory = result_dir + "/" + logging_name + "/" + str(nvm_latency) + "/" + str(column_count)            
+        elif category == STORAGE_EXPERIMENT:
             result_directory = result_dir + "/" + logging_name + "/" + str(column_count)
 
         if not os.path.exists(result_directory):
@@ -494,6 +506,20 @@ def collect_stats(result_dir,
 # EVAL
 ###################################################################################
 
+def set_nvm_latency(nvm_latency):
+    if ENABLE_SDV :
+        cwd = os.getcwd()
+        os.chdir(SDV_DIR)
+        subprocess.call(['sudo', SDV_SCRIPT, '--enable', '--pm-latency', str(nvm_latency)], stdout=log_file)
+        os.chdir(cwd)
+
+def reset_nvm_latency():
+    if ENABLE_SDV :
+        cwd = os.getcwd()
+        os.chdir(SDV_DIR)
+        subprocess.call(['sudo', SDV_SCRIPT, '--enable', '--pm-latency', str(DEFAULT_NVM_LATENCY)], stdout=log_file)
+        os.chdir(cwd)
+
 # WORKLOAD -- EVAL
 def workload_eval():
 
@@ -502,30 +528,45 @@ def workload_eval():
 
     tuple_count = DEFAULT_TUPLE_COUNT
 
-    for logging_type in LOGGING_TYPES:        
-        for column_count in COLUMN_COUNTS:
+    for nvm_latency in NVM_LATENCIES:
+        # SET NVM LATENCY
+        set_nvm_latency(nvm_latency)
+        
+        for logging_type in LOGGING_TYPES:        
+            for column_count in COLUMN_COUNTS:
+    
+                # RUN EXPERIMENT            
+                run_experiment(LOGGING, WORKLOAD_EXPERIMENT, column_count, tuple_count, logging_type)
+    
+                # COLLECT STATS
+                collect_stats(WORKLOAD_DIR, "workload.csv", WORKLOAD_EXPERIMENT, nvm_latency)
 
-            # RUN EXPERIMENT            
-            run_experiment(LOGGING, WORKLOAD_EXPERIMENT, column_count, tuple_count, logging_type)
+    # RESET NVM LATENCY
+    reset_nvm_latency()
 
-            # COLLECT STATS
-            collect_stats(WORKLOAD_DIR, "workload.csv", WORKLOAD_EXPERIMENT)
 
 # RECOVERY -- EVAL
 def recovery_eval():
 
     # CLEAN UP RESULT DIR
     clean_up_dir(RECOVERY_DIR)
-    
-    for logging_type in LOGGING_TYPES_SUBSET:        
-        for tuple_count in TUPLE_COUNTS:
-            for column_count in COLUMN_COUNTS:
 
-                # RUN EXPERIMENT            
-                run_experiment(LOGGING, RECOVERY_EXPERIMENT, column_count, tuple_count, logging_type)
+    for nvm_latency in NVM_LATENCIES:
+         # SET NVM LATENCY
+        set_nvm_latency(nvm_latency)
+        
+        for logging_type in LOGGING_TYPES_SUBSET:        
+            for tuple_count in TUPLE_COUNTS:
+                for column_count in COLUMN_COUNTS:
     
-                # COLLECT STATS
-                collect_stats(RECOVERY_DIR, "recovery.csv", RECOVERY_EXPERIMENT)
+                    # RUN EXPERIMENT            
+                    run_experiment(LOGGING, RECOVERY_EXPERIMENT, column_count, tuple_count, logging_type)
+        
+                    # COLLECT STATS
+                    collect_stats(RECOVERY_DIR, "recovery.csv", RECOVERY_EXPERIMENT, nvm_latency)
+
+    # RESET NVM LATENCY
+    reset_nvm_latency()
 
 # STORAGE -- EVAL
 def storage_eval():
@@ -541,7 +582,7 @@ def storage_eval():
                 run_experiment(LOGGING, STORAGE_EXPERIMENT, column_count, tuple_count, logging_type)
     
                 # COLLECT STATS
-                collect_stats(STORAGE_DIR, "storage.csv", STORAGE_EXPERIMENT)
+                collect_stats(STORAGE_DIR, "storage.csv", STORAGE_EXPERIMENT, 0)
             
 
 ###################################################################################
@@ -549,8 +590,9 @@ def storage_eval():
 ###################################################################################
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Run Tilegroup Experiments')
+    parser = argparse.ArgumentParser(description='Run Hybrid Experiments')
 
+    parser.add_argument("-x", "--enable-sdv", help='enable sdv', action='store_true')
     parser.add_argument("-w", "--workload", help='eval workload', action='store_true')
     parser.add_argument("-r", "--recovery", help='eval recovery', action='store_true')
     parser.add_argument("-s", "--storage", help='eval storage', action='store_true')
@@ -561,6 +603,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    if args.enable_sdv:
+        ENABLE_SDV = os.path.exists(SDV_DIR)
+        print("ENABLE_SDV : " + str(ENABLE_SDV))
+    
     ## EVAL
     
     if args.workload:
