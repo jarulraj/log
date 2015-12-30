@@ -162,7 +162,7 @@ DEFAULT_NVM_LATENCY = NVM_LATENCIES[0]
 ENABLE_SDV = False
 
 PMEM_FILE_DIR = "/mnt/pmfs/peloton/"
-PMEM_FILE_SIZE = 1024
+PMEM_FILE_SIZE = 4 * 1024
 
 ###################################################################################
 # UTILS
@@ -513,17 +513,21 @@ def collect_stats(result_dir,
 
 def set_nvm_latency(nvm_latency):
     if ENABLE_SDV :
+        FNULL = open(os.devnull, 'w')
         cwd = os.getcwd()
         os.chdir(SDV_DIR)
-        subprocess.call(['sudo', SDV_SCRIPT, '--enable', '--pm-latency', str(nvm_latency)], stdout=log_file)
+        subprocess.call(['sudo', SDV_SCRIPT, '--enable', '--pm-latency', str(nvm_latency)], stdout=FNULL)
         os.chdir(cwd)
+        FNULL.close()
 
 def reset_nvm_latency():
     if ENABLE_SDV :
+        FNULL = open(os.devnull, 'w')
         cwd = os.getcwd()
         os.chdir(SDV_DIR)
-        subprocess.call(['sudo', SDV_SCRIPT, '--enable', '--pm-latency', str(DEFAULT_NVM_LATENCY)], stdout=log_file)
+        subprocess.call(['sudo', SDV_SCRIPT, '--enable', '--pm-latency', str(DEFAULT_NVM_LATENCY)], stdout=FNULL)
         os.chdir(cwd)
+        FNULL.close()
 
 # WORKLOAD -- EVAL
 def workload_eval():
