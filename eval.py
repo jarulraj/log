@@ -140,10 +140,10 @@ STORAGE_DIR = BASE_DIR + "/results/storage/"
 WAIT_DIR = BASE_DIR + "/results/storage/"
 
 WORKLOAD_COUNT = (10, 20, 50, 100)
-COLUMN_COUNTS = (5, 50)
+COLUMN_COUNTS = (5, 20, 50)
 WAIT_TIMEOUTS = (10, 100, 1000, 10000, 100000)
 
-SCALE_FACTOR = 10
+SCALE_FACTOR = 1
 
 TUPLE_COUNTS = (1000/SCALE_FACTOR, 
                 10000/SCALE_FACTOR, 
@@ -775,4 +775,4 @@ if __name__ == '__main__':
     if args.wait_plot:
         wait_plot()
 
-    create_legend()
+    #create_legend()
