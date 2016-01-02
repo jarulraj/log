@@ -136,10 +136,19 @@ OUTPUT_FILE = "outputfile.summary"
 WORKLOAD_DIR = BASE_DIR + "/results/workload/"
 RECOVERY_DIR = BASE_DIR + "/results/recovery/"
 STORAGE_DIR = BASE_DIR + "/results/storage/"
+WAIT_DIR = BASE_DIR + "/results/storage/"
 
 WORKLOAD_COUNT = (10, 20, 50, 100)
 COLUMN_COUNTS = (5, 10, 20, 50)
-TUPLE_COUNTS = (1000, 10000, 100000)
+WAIT_TIMEOUTS = (10, 100, 1000, 10000, 100000)
+
+SCALE_FACTOR = 10
+
+TUPLE_COUNTS = (1000/SCALE_FACTOR, 
+                10000/SCALE_FACTOR, 
+                100000/SCALE_FACTOR)
+
+DEFAULT_TUPLE_COUNT = 100000/SCALE_FACTOR
 
 LOGGING_TYPES = (0, 1, 2)
 LOGGING_NAMES = ("NONE", "WAL", "WBL")
@@ -148,12 +157,12 @@ LOGGING_NAMES = ("NONE", "WAL", "WBL")
 LOGGING_TYPES_SUBSET = (1, 2)   
 LOGGING_NAMES_SUBSET = ("WAL", "WBL")
 
-DEFAULT_TUPLE_COUNT = 100000
 DEFAULT_COLUMN_COUNT = 20
 
 WORKLOAD_EXPERIMENT = 1
 RECOVERY_EXPERIMENT = 2
 STORAGE_EXPERIMENT = 3
+WAIT_EXPERIMENT = 4
 
 SDV_DIR = "/data/devel/sdv-tools/sdv-release"
 SDV_SCRIPT = SDV_DIR + "/ivt_pm_sdv.sh"    
@@ -364,6 +373,53 @@ def create_storage_bar_chart(datasets):
 
     return (fig)
 
+def create_wait_bar_chart(datasets):
+    fig = plot.figure()
+    ax1 = fig.add_subplot(111)
+
+    # X-AXIS
+    x_values = np.arange(len(WAIT_TIMEOUTS))
+    N = len(x_values)
+    x_labels = [str(i) for i in WAIT_TIMEOUTS]
+
+    ind = np.arange(N)
+    idx = 1
+
+    # GROUP
+    for group_index, group in enumerate(LOGGING_TYPES_SUBSET):
+        group_data = []
+
+        # LINE
+        for line_index, line in enumerate(x_values):
+            group_data.append(datasets[group_index][line_index][1])
+
+        LOG.info("%s group_data = %s ", group, str(group_data))
+
+        ax1.plot(x_values, group_data, color=OPT_LINE_COLORS[idx], linewidth=OPT_LINE_WIDTH,
+                 marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, label=str(group))
+
+        idx = idx + 1
+
+    # GRID
+    axes = ax1.get_axes()
+    makeGrid(ax1)
+
+    # Y-AXIS
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
+    ax1.minorticks_off()
+    ax1.set_ylabel("Execution time (ms)", fontproperties=LABEL_FP)
+
+    # X-AXIS
+    ax1.set_xlabel("Wait timeout (us)", fontproperties=LABEL_FP)
+    plot.xticks(x_values, x_labels)
+
+    for label in ax1.get_yticklabels() :
+        label.set_fontproperties(TICK_FP)
+    for label in ax1.get_xticklabels() :
+        label.set_fontproperties(TICK_FP)
+
+    return (fig)
+
 ###################################################################################
 # PLOT HELPERS
 ###################################################################################
@@ -427,6 +483,23 @@ def storage_plot():
     
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
     
+# WAIT -- PLOT
+def wait_plot():
+
+    datasets = []
+    for logging_name in LOGGING_NAMES_SUBSET:
+    
+        data_file = STORAGE_DIR + "/" + logging_name + "/" + "wait.csv"
+
+        dataset = loadDataFile(len(WAIT_TIMEOUTS), 2, data_file)
+        datasets.append(dataset)
+    
+    fig = create_wait_bar_chart(datasets)
+
+    fileName = "wait.pdf"
+
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)    
+    
 ###################################################################################
 # EVAL HELPERS
 ###################################################################################
@@ -443,7 +516,8 @@ def run_experiment(program,
                    experiment_type,
                    column_count,
                    tuple_count,
-                   logging_type):
+                   logging_type,
+                   wait_timeout):
 
     # cleanup
     subprocess.call(["rm -f " + OUTPUT_FILE], shell=True)
@@ -454,7 +528,8 @@ def run_experiment(program,
                      "-l", str(logging_type),
                      "-z", str(column_count),
                      "-d", str(PMEM_FILE_DIR),
-                     "-f", str(PMEM_FILE_SIZE)])
+                     "-f", str(PMEM_FILE_SIZE),
+                     "-w", str(wait_timeout)])
 
 
 # COLLECT STATS
@@ -475,8 +550,9 @@ def collect_stats(result_dir,
         column_count = data[1]
         tuple_count = data[2]
         backend_count = data[3]
+        wait_timeout = data[4]
         
-        stat = data[4]
+        stat = data[5]
 
         if(logging_type == "0"):
             logging_name = LOGGING_NAMES[0]
@@ -492,6 +568,8 @@ def collect_stats(result_dir,
             result_directory = result_dir + "/" + logging_name + "/" + str(nvm_latency) + "/" + str(column_count)            
         elif category == STORAGE_EXPERIMENT:
             result_directory = result_dir + "/" + logging_name + "/" + str(column_count)
+        elif category == WAIT_EXPERIMENT:
+            result_directory = result_dir + "/" + logging_name
 
         if not os.path.exists(result_directory):
             os.makedirs(result_directory)
@@ -503,7 +581,9 @@ def collect_stats(result_dir,
         if category == WORKLOAD_EXPERIMENT:
             result_file.write(str(column_count) + " , " + str(stat) + "\n")
         elif category == RECOVERY_EXPERIMENT or category == STORAGE_EXPERIMENT:
-            result_file.write(str(tuple_count) + " , " + str(stat) + "\n")            
+            result_file.write(str(tuple_count) + " , " + str(stat) + "\n")
+        elif category == WAIT_EXPERIMENT:         
+            result_file.write(str(wait_timeout) + " , " + str(stat) + "\n")
             
         result_file.close()
 
@@ -536,6 +616,7 @@ def workload_eval():
     clean_up_dir(WORKLOAD_DIR)
 
     tuple_count = DEFAULT_TUPLE_COUNT
+    wait_timeout = 0
 
     for nvm_latency in NVM_LATENCIES:
         # SET NVM LATENCY
@@ -545,7 +626,8 @@ def workload_eval():
             for column_count in COLUMN_COUNTS:
     
                 # RUN EXPERIMENT            
-                run_experiment(LOGGING, WORKLOAD_EXPERIMENT, column_count, tuple_count, logging_type)
+                run_experiment(LOGGING, WORKLOAD_EXPERIMENT, column_count, 
+                               tuple_count, logging_type, wait_timeout)
     
                 # COLLECT STATS
                 collect_stats(WORKLOAD_DIR, "workload.csv", WORKLOAD_EXPERIMENT, nvm_latency)
@@ -560,6 +642,8 @@ def recovery_eval():
     # CLEAN UP RESULT DIR
     clean_up_dir(RECOVERY_DIR)
 
+    wait_timeout = 0
+
     for nvm_latency in NVM_LATENCIES:
          # SET NVM LATENCY
         set_nvm_latency(nvm_latency)
@@ -569,7 +653,8 @@ def recovery_eval():
                 for column_count in COLUMN_COUNTS:
     
                     # RUN EXPERIMENT            
-                    run_experiment(LOGGING, RECOVERY_EXPERIMENT, column_count, tuple_count, logging_type)
+                    run_experiment(LOGGING, RECOVERY_EXPERIMENT, column_count, 
+                                   tuple_count, logging_type, wait_timeout)
         
                     # COLLECT STATS
                     collect_stats(RECOVERY_DIR, "recovery.csv", RECOVERY_EXPERIMENT, nvm_latency)
@@ -583,16 +668,38 @@ def storage_eval():
     # CLEAN UP RESULT DIR
     clean_up_dir(STORAGE_DIR)
     
+    wait_timeout = 0
+
     for logging_type in LOGGING_TYPES_SUBSET:        
         for tuple_count in TUPLE_COUNTS:
             for column_count in COLUMN_COUNTS:
 
                 # RUN EXPERIMENT            
-                run_experiment(LOGGING, STORAGE_EXPERIMENT, column_count, tuple_count, logging_type)
+                run_experiment(LOGGING, STORAGE_EXPERIMENT, column_count, 
+                               tuple_count, logging_type, wait_timeout)
     
                 # COLLECT STATS
                 collect_stats(STORAGE_DIR, "storage.csv", STORAGE_EXPERIMENT, 0)
             
+
+# WAIT -- EVAL
+def wait_eval():
+
+    # CLEAN UP RESULT DIR
+    clean_up_dir(WAIT_DIR)
+    
+    tuple_count = DEFAULT_TUPLE_COUNT
+    column_count = DEFAULT_COLUMN_COUNT
+
+    for logging_type in LOGGING_TYPES_SUBSET:
+        for wait_timeout in WAIT_TIMEOUTS:
+                
+            # RUN EXPERIMENT            
+            run_experiment(LOGGING, WORKLOAD_EXPERIMENT, column_count, 
+                           tuple_count, logging_type, wait_timeout)
+
+            # COLLECT STATS
+            collect_stats(STORAGE_DIR, "wait.csv", WAIT_EXPERIMENT, 0)
 
 ###################################################################################
 # MAIN
@@ -605,10 +712,12 @@ if __name__ == '__main__':
     parser.add_argument("-w", "--workload", help='eval workload', action='store_true')
     parser.add_argument("-r", "--recovery", help='eval recovery', action='store_true')
     parser.add_argument("-s", "--storage", help='eval storage', action='store_true')
+    parser.add_argument("-t", "--wait", help='eval wait', action='store_true')
 
     parser.add_argument("-a", "--workload_plot", help='plot workload', action='store_true')
     parser.add_argument("-b", "--recovery_plot", help='plot recovery', action='store_true')
     parser.add_argument("-c", "--storage_plot", help='plot recovery', action='store_true')
+    parser.add_argument("-d", "--wait_plot", help='plot wait', action='store_true')
 
     args = parser.parse_args()
 
@@ -627,6 +736,9 @@ if __name__ == '__main__':
     if args.storage:
         storage_eval()
 
+    if args.wait:
+        wait_eval()
+
     ## PLOT
 
     if args.workload_plot:
@@ -637,3 +749,6 @@ if __name__ == '__main__':
 
     if args.storage_plot:
         storage_plot()
+
+    if args.wait_plot:
+        wait_plot()
