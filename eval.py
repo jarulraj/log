@@ -66,14 +66,15 @@ OPT_FONT_NAME = 'Helvetica'
 OPT_GRAPH_HEIGHT = 300
 OPT_GRAPH_WIDTH = 400
 
-# Make a list by cycling through the colors you care about
-# to match the length of your data.
+# http://colrd.com/palette/19308/
+COLOR_MAP = ('#51574a', '#447c69', '#74c493',    
+             '#8e8c6d', '#e4bf80', '#e9d78e',    
+             '#e2975d', '#f19670', '#e16552',    
+             '#c94a53', '#be5168', '#a34974',    
+             '#993767', '#65387d', '#4e2472',
+             '#9163b6', '#e279a3', '#e0598b',    
+             '#7c9fb0', '#5698c4', '#9abf88')
 
-NUM_COLORS = 5
-COLOR_MAP = ( '#F58A87', '#80CA86', '#9EC9E9', '#CFAB86', '#D89761' )
-
-
-#COLOR_MAP = ('#F15854', '#9C9F84', '#F7DCB4', '#991809', '#5C755E', '#A97D5D')
 OPT_COLORS = COLOR_MAP
 
 OPT_GRID_COLOR = 'gray'
@@ -139,7 +140,7 @@ STORAGE_DIR = BASE_DIR + "/results/storage/"
 WAIT_DIR = BASE_DIR + "/results/storage/"
 
 WORKLOAD_COUNT = (10, 20, 50, 100)
-COLUMN_COUNTS = (5, 10, 20, 50)
+COLUMN_COUNTS = (5, 50)
 WAIT_TIMEOUTS = (10, 100, 1000, 10000, 100000)
 
 SCALE_FACTOR = 10
@@ -150,12 +151,14 @@ TUPLE_COUNTS = (1000/SCALE_FACTOR,
 
 DEFAULT_TUPLE_COUNT = 100000/SCALE_FACTOR
 
-LOGGING_TYPES = (0, 1, 2)
-LOGGING_NAMES = ("NONE", "WAL", "WBL")
-
+LOGGING_TYPES = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+LOGGING_NAMES = ("NONE", 
+                 "DRAM_NVM", "NVM_NVM",
+                 "DRAM_HDD", "HDD_NVM", "NVM_HDD", "HDD_HDD",
+                 "DRAM_SSD", "SSD_NVM", "NVM_SSD", "SSD_SSD")
 # Skip no logging
-LOGGING_TYPES_SUBSET = (1, 2)   
-LOGGING_NAMES_SUBSET = ("WAL", "WBL")
+LOGGING_TYPES_SUBSET = LOGGING_TYPES[1:]
+LOGGING_NAMES_SUBSET = LOGGING_NAMES[1:]
 
 DEFAULT_COLUMN_COUNT = 20
 
@@ -166,12 +169,11 @@ WAIT_EXPERIMENT = 4
 
 SDV_DIR = "/data/devel/sdv-tools/sdv-release"
 SDV_SCRIPT = SDV_DIR + "/ivt_pm_sdv.sh"    
-NVM_LATENCIES = ("160", "320", "480")
+NVM_LATENCIES = ("160", "320")
 DEFAULT_NVM_LATENCY = NVM_LATENCIES[0]
 ENABLE_SDV = False
 
-PMEM_FILE_DIR = "/mnt/pmfs/peloton/"
-PMEM_FILE_SIZE = 4 * 1024
+DATA_FILE_SIZE = 4 * 1024
 
 ###################################################################################
 # UTILS
@@ -231,6 +233,32 @@ def saveGraph(fig, output, width, height):
 # PLOT
 ###################################################################################
 
+def create_legend():
+    fig = pylab.figure()
+    ax1 = fig.add_subplot(111)
+
+    figlegend = pylab.figure(figsize=(15, 2.0))
+    idx = 0
+    lines = [None] * (len(LOGGING_TYPES))
+    data = [1]
+    x_values = [1]
+
+    for group in xrange(len(LOGGING_TYPES)):
+        lines[idx], = ax1.plot(x_values, data,
+                               color=OPT_LINE_COLORS[idx], linewidth=OPT_LINE_WIDTH,
+                               marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, label=str(group))
+
+        idx = idx + 1
+
+    # LEGEND
+    figlegend.legend(lines, LOGGING_NAMES, prop=LEGEND_FP,
+                     loc=1, ncol=4, 
+                     mode="expand", shadow=OPT_LEGEND_SHADOW,
+                     frameon=False, borderaxespad=0.0, 
+                     handlelength=2)
+
+    figlegend.savefig('legend.pdf')
+    
 def create_workload_bar_chart(datasets):
     fig = plot.figure()
     ax1 = fig.add_subplot(111)
@@ -527,8 +555,7 @@ def run_experiment(program,
                      "-t", str(tuple_count),
                      "-l", str(logging_type),
                      "-z", str(column_count),
-                     "-d", str(PMEM_FILE_DIR),
-                     "-f", str(PMEM_FILE_SIZE),
+                     "-f", str(DATA_FILE_SIZE),
                      "-w", str(wait_timeout)])
 
 
@@ -554,12 +581,7 @@ def collect_stats(result_dir,
         
         stat = data[5]
 
-        if(logging_type == "0"):
-            logging_name = LOGGING_NAMES[0]
-        elif(logging_type == "1"):
-            logging_name = LOGGING_NAMES[1]
-        elif(logging_type == "2"):
-            logging_name = LOGGING_NAMES[2]
+        logging_name = LOGGING_NAMES[int(logging_type)]
 
         # MAKE RESULTS FILE DIR
         if category == WORKLOAD_EXPERIMENT:
@@ -752,3 +774,5 @@ if __name__ == '__main__':
 
     if args.wait_plot:
         wait_plot()
+
+    create_legend()
