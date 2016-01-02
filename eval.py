@@ -84,8 +84,8 @@ OPT_PATTERNS = ([ "////", "////", "o", "o", "\\\\" , "\\\\" , "//////", "//////"
 
 OPT_LABEL_WEIGHT = 'bold'
 OPT_LINE_COLORS = COLOR_MAP
-OPT_LINE_WIDTH = 4.0
-OPT_MARKER_SIZE = 8.0
+OPT_LINE_WIDTH = 3.0
+OPT_MARKER_SIZE = 6.0
 DATA_LABELS = []
 
 
@@ -151,10 +151,11 @@ TUPLE_COUNTS = (1000/SCALE_FACTOR,
 
 DEFAULT_TUPLE_COUNT = 100000/SCALE_FACTOR
 
-LOGGING_TYPES = (0, 1, 2, 3, 4, 5, 6)
+LOGGING_TYPES = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 LOGGING_NAMES = ("NONE", 
                  "DRAM_NVM", "NVM_NVM",
-                 "DRAM_HDD", "HDD_NVM", "NVM_HDD", "HDD_HDD")
+                 "DRAM_HDD", "HDD_NVM", "NVM_HDD", "HDD_HDD",
+                 "DRAM_SSD", "SSD_NVM", "NVM_SSD", "SSD_SSD")
 # Skip no logging
 LOGGING_TYPES_SUBSET = LOGGING_TYPES[1:]
 LOGGING_NAMES_SUBSET = LOGGING_NAMES[1:]
