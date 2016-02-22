@@ -137,7 +137,7 @@ OUTPUT_FILE = "outputfile.summary"
 WORKLOAD_DIR = BASE_DIR + "/results/workload/"
 RECOVERY_DIR = BASE_DIR + "/results/recovery/"
 STORAGE_DIR = BASE_DIR + "/results/storage/"
-WAIT_DIR = BASE_DIR + "/results/storage/"
+WAIT_DIR = BASE_DIR + "/results/wait/"
 
 WORKLOAD_COUNT = (10, 20, 50, 100)
 COLUMN_COUNTS = (5, 20, 50)
@@ -152,10 +152,9 @@ TUPLE_COUNTS = (1000/SCALE_FACTOR,
 DEFAULT_TUPLE_COUNT = 100000/SCALE_FACTOR
 
 LOGGING_TYPES = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-LOGGING_NAMES = ("NONE", 
-                 "DRAM_NVM", "NVM_NVM",
-                 "DRAM_HDD", "HDD_NVM", "NVM_HDD", "HDD_HDD",
+LOGGING_NAMES = ("NONE", "DRAM_NVM", "NVM_NVM", "DRAM_HDD", "HDD_NVM", "NVM_HDD", "HDD_HDD",
                  "DRAM_SSD", "SSD_NVM", "NVM_SSD", "SSD_SSD")
+
 # Skip no logging
 LOGGING_TYPES_SUBSET = LOGGING_TYPES[1:]
 LOGGING_NAMES_SUBSET = LOGGING_NAMES[1:]
@@ -738,7 +737,7 @@ if __name__ == '__main__':
 
     parser.add_argument("-a", "--workload_plot", help='plot workload', action='store_true')
     parser.add_argument("-b", "--recovery_plot", help='plot recovery', action='store_true')
-    parser.add_argument("-c", "--storage_plot", help='plot recovery', action='store_true')
+    parser.add_argument("-c", "--storage_plot", help='plot storage', action='store_true')
     parser.add_argument("-d", "--wait_plot", help='plot wait', action='store_true')
 
     args = parser.parse_args()
