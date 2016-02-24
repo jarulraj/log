@@ -143,17 +143,22 @@ WORKLOAD_COUNT = (10, 20, 50, 100)
 COLUMN_COUNTS = (5, 20, 50)
 WAIT_TIMEOUTS = (10, 100, 1000, 10000, 100000)
 
-SCALE_FACTOR = 1
+SHRINK_SCALE_FACTOR = 1000
 
-TUPLE_COUNTS = (1000/SCALE_FACTOR, 
-                10000/SCALE_FACTOR, 
-                100000/SCALE_FACTOR)
+TUPLE_COUNTS = (1000/SHRINK_SCALE_FACTOR, 10000/SHRINK_SCALE_FACTOR, 100000/SHRINK_SCALE_FACTOR)
 
-DEFAULT_TUPLE_COUNT = 100000/SCALE_FACTOR
+DEFAULT_TUPLE_COUNT = 100000/SHRINK_SCALE_FACTOR
 
-LOGGING_TYPES = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-LOGGING_NAMES = ("NONE", "DRAM_NVM", "NVM_NVM", "DRAM_HDD", "HDD_NVM", "NVM_HDD", "HDD_HDD",
-                 "DRAM_SSD", "SSD_NVM", "NVM_SSD", "SSD_SSD")
+# Refer LoggingType in common/types.h
+LOGGING_TYPES = (0, 10, 11, 12, 
+                 20, 21, 22, 
+                 30, 31, 32,
+                 40, 41, 42)
+
+LOGGING_NAMES = ("NONE", "DRAM_NVM", "DRAM_SSD", "DRAM_HDD", 
+                 "NVM_NVM", "NVM_SSD", "NVM_HDD", 
+                 "SSD_NVM", "SSD_SSD", "SSD_HDD", 
+                 "HDD_NVM", "HDD_SSD", "HDD_HDD")
 
 # Skip no logging
 LOGGING_TYPES_SUBSET = LOGGING_TYPES[1:]
@@ -236,25 +241,29 @@ def create_legend():
     fig = pylab.figure()
     ax1 = fig.add_subplot(111)
 
-    figlegend = pylab.figure(figsize=(15, 2.0))
-    idx = 0
-    lines = [None] * (len(LOGGING_TYPES))
+    figlegend = pylab.figure(figsize=(12, 3.0))
+
+    N = len(LOGGING_NAMES);
+    ind = np.arange(1)
+    margin = 0.10
+    width = ((1.0 - 2 * margin) / N) * 2
     data = [1]
-    x_values = [1]
 
-    for group in xrange(len(LOGGING_TYPES)):
-        lines[idx], = ax1.plot(x_values, data,
-                               color=OPT_LINE_COLORS[idx], linewidth=OPT_LINE_WIDTH,
-                               marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, label=str(group))
+    bars = [None] * (len(LOGGING_NAMES) + 1) * 2
 
+    idx = 0
+    for group in xrange(len(LOGGING_NAMES)):
+        bars[idx] = ax1.bar(ind + margin + ((idx + 1) * width), data, width,
+                            color=OPT_COLORS[idx],
+                            linewidth=BAR_LINEWIDTH)
         idx = idx + 1
 
     # LEGEND
-    figlegend.legend(lines, LOGGING_NAMES, prop=LEGEND_FP,
-                     loc=1, ncol=4, 
+    figlegend.legend(bars, LOGGING_NAMES, prop=LEGEND_FP,
+                     loc=1, ncol=5,
                      mode="expand", shadow=OPT_LEGEND_SHADOW,
-                     frameon=False, borderaxespad=0.0, 
-                     handlelength=2)
+                     frameon=False, borderaxespad=0.0,
+                     handleheight=1.5, handlelength=4)
 
     figlegend.savefig('legend.pdf')
     
@@ -267,23 +276,27 @@ def create_workload_bar_chart(datasets):
     N = len(x_values)
     x_labels = [str(i) for i in COLUMN_COUNTS]
 
+    M = len(LOGGING_NAMES)
     ind = np.arange(N)
-    idx = 0
+    margin = 0.15
+    width = ((1.0 - 2 * margin) / M)
+    bars = [None] * M * N
 
-    # GROUP
-    for group_index, group in enumerate(LOGGING_TYPES):
+    for group in xrange(len(datasets)):
+        # GROUP
         group_data = []
 
-        # LINE
-        for line_index, line in enumerate(x_values):
-            group_data.append(datasets[group_index][line_index][1])
+        for line in  xrange(len(datasets[group])):
+            for col in  xrange(len(datasets[group][line])):
+                if col == 1:
+                    group_data.append(datasets[group][line][col])
 
-        LOG.info("%s group_data = %s ", group, str(group_data))
+        LOG.info("group_data = %s", str(group_data))
 
-        ax1.plot(x_values, group_data, color=OPT_LINE_COLORS[idx], linewidth=OPT_LINE_WIDTH,
-                 marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, label=str(group))
+        bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
+                              color=OPT_COLORS[group],
+                              linewidth=BAR_LINEWIDTH)
 
-        idx = idx + 1
 
     # GRID
     axes = ax1.get_axes()
@@ -296,7 +309,8 @@ def create_workload_bar_chart(datasets):
 
     # X-AXIS
     ax1.set_xlabel("Tuple width", fontproperties=LABEL_FP)
-    plot.xticks(x_values, x_labels)
+    ax1.set_xticks(ind + margin + (group * width)/2.0 )
+    ax1.set_xticklabels(x_labels)
 
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
@@ -580,7 +594,8 @@ def collect_stats(result_dir,
         
         stat = data[5]
 
-        logging_name = LOGGING_NAMES[int(logging_type)]
+        logging_type_offset = LOGGING_TYPES.index(int(logging_type))
+        logging_name = LOGGING_NAMES[logging_type_offset]
 
         # MAKE RESULTS FILE DIR
         if category == WORKLOAD_EXPERIMENT:
