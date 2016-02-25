@@ -150,11 +150,16 @@ TUPLE_COUNTS = (10000/SHRINK_SCALE_FACTOR, 100000/SHRINK_SCALE_FACTOR)
 DEFAULT_TUPLE_COUNT = 100000/SHRINK_SCALE_FACTOR
 
 # Refer LoggingType in common/types.h
-LOGGING_TYPES = (0, 10, 11, 12, 
-                 20, 21, 22, 
-                 30, 31, 32,
-                 40, 41, 42)
+#LOGGING_TYPES = (0, 
+#                 10, 11, 12, 
+#                 20, 21, 22, 
+#                 30, 31, 32,
+#                 40, 41, 42)
 
+LOGGING_TYPES = (0, 
+                 10,  
+                 20)
+ 
 # LOGGING_NAMES = ("NONE", 
 #                  "DRAM_NVM", "DRAM_SSD", "DRAM_HDD", 
 #                  "NVM_NVM", "NVM_SSD", "NVM_HDD", 
