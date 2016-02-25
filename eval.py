@@ -289,7 +289,7 @@ def create_workload_bar_chart(datasets):
         for line in  xrange(len(datasets[group])):
             for col in  xrange(len(datasets[group][line])):
                 if col == 1:
-                    group_data.append(datasets[group][line][col])
+                    group_data.append(100000/datasets[group][line][col])
 
         LOG.info("group_data = %s", str(group_data))
 
