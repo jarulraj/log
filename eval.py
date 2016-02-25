@@ -155,10 +155,15 @@ LOGGING_TYPES = (0, 10, 11, 12,
                  30, 31, 32,
                  40, 41, 42)
 
-LOGGING_NAMES = ("NONE", "DRAM_NVM", "DRAM_SSD", "DRAM_HDD", 
-                 "NVM_NVM", "NVM_SSD", "NVM_HDD", 
-                 "SSD_NVM", "SSD_SSD", "SSD_HDD", 
-                 "HDD_NVM", "HDD_SSD", "HDD_HDD")
+# LOGGING_NAMES = ("NONE", 
+#                  "DRAM_NVM", "DRAM_SSD", "DRAM_HDD", 
+#                  "NVM_NVM", "NVM_SSD", "NVM_HDD", 
+#                  "SSD_NVM", "SSD_SSD", "SSD_HDD", 
+#                  "HDD_NVM", "HDD_SSD", "HDD_HDD")
+
+LOGGING_NAMES = ("NONE", 
+                 "DRAM_NVM", 
+                 "NVM_NVM")
 
 # Skip no logging
 LOGGING_TYPES_SUBSET = LOGGING_TYPES[1:]
@@ -328,23 +333,27 @@ def create_recovery_bar_chart(datasets):
     N = len(x_values)
     x_labels = [str(i) for i in TUPLE_COUNTS]
 
+    M = len(LOGGING_NAMES)
     ind = np.arange(N)
-    idx = 1
+    margin = 0.15
+    width = ((1.0 - 2 * margin) / M)
+    bars = [None] * M * N
 
-    # GROUP
-    for group_index, group in enumerate(LOGGING_TYPES_SUBSET):
+    for group in xrange(len(datasets)):
+        # GROUP
         group_data = []
 
-        # LINE
-        for line_index, line in enumerate(x_values):
-            group_data.append(datasets[group_index][line_index][1])
+        for line in  xrange(len(datasets[group])):
+            for col in  xrange(len(datasets[group][line])):
+                if col == 1:
+                    group_data.append(datasets[group][line][col])
 
-        LOG.info("%s group_data = %s ", group, str(group_data))
+        LOG.info("group_data = %s", str(group_data))
 
-        ax1.plot(x_values, group_data, color=OPT_LINE_COLORS[idx], linewidth=OPT_LINE_WIDTH,
-                 marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, label=str(group))
+        bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
+                              color=OPT_COLORS[group],
+                              linewidth=BAR_LINEWIDTH)
 
-        idx = idx + 1
 
     # GRID
     axes = ax1.get_axes()
@@ -357,7 +366,8 @@ def create_recovery_bar_chart(datasets):
 
     # X-AXIS
     ax1.set_xlabel("Number of transactions", fontproperties=LABEL_FP)
-    plot.xticks(x_values, x_labels)
+    ax1.set_xticks(ind + margin + (group * width)/2.0 )
+    ax1.set_xticklabels(x_labels)
 
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
