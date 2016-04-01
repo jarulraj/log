@@ -166,7 +166,7 @@ ENABLE_SDV = False
 
 DATA_FILE_SIZE = 512
 
-UPDATE_RATIOS = (0, 0.1)
+UPDATE_RATIOS = (0, 0.5)
 
 ###################################################################################
 # UTILS
@@ -462,21 +462,20 @@ def create_wait_bar_chart(datasets):
 # WORKLOAD -- PLOT
 def workload_plot():
 
-    for update_ratio in UPDATE_RATIOS:
-        datasets = []
-        
-        for logging_name in LOGGING_NAMES:
+    datasets = []
+    
+    for logging_name in LOGGING_NAMES:
 
-            data_file = WORKLOAD_DIR + "/" + logging_name + "/" + "workload.csv"
+        data_file = WORKLOAD_DIR + "/" + logging_name + "/" + "workload.csv"
 
-            dataset = loadDataFile(len(UPDATE_RATIOS), 2, data_file)
-            datasets.append(dataset)
+        dataset = loadDataFile(len(UPDATE_RATIOS), 2, data_file)
+        datasets.append(dataset)
 
-        fig = create_workload_bar_chart(datasets)
+    fig = create_workload_bar_chart(datasets)
 
-        fileName = "workload-" + str(update_ratio) + ".pdf"
+    fileName = "workload.pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 # RECOVERY -- PLOT
 def recovery_plot():
