@@ -5,48 +5,46 @@
 ###################################################################################
 
 from __future__ import print_function
-import os
-import subprocess
+
 import argparse
-import pprint
-import numpy
-import sys
-import re
-import logging
-import fnmatch
-import string
 import argparse
-import pylab
-import datetime
-import math
-import time
-import fileinput
-from lxml import etree
-
-import numpy as np
-import matplotlib.pyplot as plot
-
-from matplotlib.font_manager import FontProperties
-from matplotlib.ticker import MaxNLocator
-from matplotlib.ticker import LogLocator
-from matplotlib.ticker import LinearLocator
-from pprint import pprint, pformat
-from matplotlib.backends.backend_pdf import PdfPages
-from matplotlib import rc
-from operator import add
-import matplotlib.font_manager as font_manager
-
-import csv
 import brewer2mpl
-import matplotlib
-
-from options import *
+import csv
+import datetime
+import fileinput
+import fnmatch
 from functools import wraps
+import logging
+from lxml import etree
+import math
+from matplotlib import rc
+import matplotlib
+from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.font_manager import FontProperties
+from matplotlib.ticker import LinearLocator
+from matplotlib.ticker import LogLocator
+from matplotlib.ticker import MaxNLocator
+import numpy
+from operator import add
+from options import *
+import os
+from pprint import pprint, pformat
+import pprint
+import pylab
+import re
+import string
+import subprocess
+import sys
+import time
+
+import matplotlib.font_manager as font_manager
+import matplotlib.pyplot as plot
+import numpy as np
+
 
 ###################################################################################
 # LOGGING CONFIGURATION
 ###################################################################################
-
 LOG = logging.getLogger(__name__)
 LOG_handler = logging.StreamHandler()
 LOG_formatter = logging.Formatter(
@@ -130,7 +128,7 @@ YAXIS_ROUND = 1000.0
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 PELOTON_BUILD_DIR = BASE_DIR + "/../peloton/build"
-LOGGING = PELOTON_BUILD_DIR + "/tests/logging_test"
+LOGGING = PELOTON_BUILD_DIR + "/src/.libs/logger"
 
 OUTPUT_FILE = "outputfile.summary"
 
@@ -150,25 +148,16 @@ TUPLE_COUNTS = (10000/SHRINK_SCALE_FACTOR, 100000/SHRINK_SCALE_FACTOR)
 DEFAULT_TUPLE_COUNT = 100000/SHRINK_SCALE_FACTOR
 
 # Refer LoggingType in common/types.h
-#LOGGING_TYPES = (0, 
-#                 10, 11, 12, 
-#                 20, 21, 22, 
-#                 30, 31, 32,
-#                 40, 41, 42)
-
 LOGGING_TYPES = (0, 
-                 10,  
-                 20)
+                 10, 11, 
+                 20, 21, 
+                 30, 31
+                 )
  
-# LOGGING_NAMES = ("NONE", 
-#                  "DRAM_NVM", "DRAM_SSD", "DRAM_HDD", 
-#                  "NVM_NVM", "NVM_SSD", "NVM_HDD", 
-#                  "SSD_NVM", "SSD_SSD", "SSD_HDD", 
-#                  "HDD_NVM", "HDD_SSD", "HDD_HDD")
-
 LOGGING_NAMES = ("NONE", 
-                 "DRAM_NVM", 
-                 "NVM_NVM")
+                 "DRAM_NVM", "DRAM_HDD", 
+                 "NVM_NVM", "NVM_HDD", 
+                 "HDD_NVM", "HDD_HDD")
 
 # Skip no logging
 LOGGING_TYPES_SUBSET = LOGGING_TYPES[1:]
