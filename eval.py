@@ -391,53 +391,6 @@ def create_storage_bar_chart(datasets):
 
     return (fig)
 
-def create_wait_bar_chart(datasets):
-    fig = plot.figure()
-    ax1 = fig.add_subplot(111)
-
-    # X-AXIS
-    x_values = np.arange(len(WAIT_TIMEOUTS))
-    N = len(x_values)
-    x_labels = [str(i) for i in WAIT_TIMEOUTS]
-
-    ind = np.arange(N)
-    idx = 1
-
-    # GROUP
-    for group_index, group in enumerate(LOGGING_TYPES_SUBSET):
-        group_data = []
-
-        # LINE
-        for line_index, line in enumerate(x_values):
-            group_data.append(datasets[group_index][line_index][1])
-
-        LOG.info("%s group_data = %s ", group, str(group_data))
-
-        ax1.plot(x_values, group_data, color=OPT_LINE_COLORS[idx], linewidth=OPT_LINE_WIDTH,
-                 marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, label=str(group))
-
-        idx = idx + 1
-
-    # GRID
-    axes = ax1.get_axes()
-    makeGrid(ax1)
-
-    # Y-AXIS
-    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
-    ax1.minorticks_off()
-    ax1.set_ylabel("Execution time (ms)", fontproperties=LABEL_FP)
-
-    # X-AXIS
-    ax1.set_xlabel("Wait timeout (us)", fontproperties=LABEL_FP)
-    plot.xticks(x_values, x_labels)
-
-    for label in ax1.get_yticklabels() :
-        label.set_fontproperties(TICK_FP)
-    for label in ax1.get_xticklabels() :
-        label.set_fontproperties(TICK_FP)
-
-    return (fig)
-
 ###################################################################################
 # PLOT HELPERS
 ###################################################################################
@@ -499,23 +452,6 @@ def storage_plot():
         fileName = "storage-" + str(column_count) + ".pdf"
 
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
-
-# WAIT -- PLOT
-def wait_plot():
-
-    datasets = []
-    for logging_name in LOGGING_NAMES_SUBSET:
-
-        data_file = STORAGE_DIR + "/" + logging_name + "/" + "wait.csv"
-
-        dataset = loadDataFile(len(WAIT_TIMEOUTS), 2, data_file)
-        datasets.append(dataset)
-
-    fig = create_wait_bar_chart(datasets)
-
-    fileName = "wait.pdf"
-
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 ###################################################################################
 # EVAL HELPERS
@@ -680,23 +616,6 @@ def storage_eval():
                 # COLLECT STATS
                 collect_stats(STORAGE_DIR, "storage.csv", STORAGE_EXPERIMENT, 0)
 
-
-# WAIT -- EVAL
-def wait_eval():
-
-    # CLEAN UP RESULT DIR
-    clean_up_dir(WAIT_DIR)
-
-    for logging_type in LOGGING_TYPES_SUBSET:
-        for wait_timeout in WAIT_TIMEOUTS:
-
-            # RUN EXPERIMENT
-            run_experiment(LOGGING, WORKLOAD_EXPERIMENT,
-                           logging_type, wait_timeout)
-
-            # COLLECT STATS
-            collect_stats(STORAGE_DIR, "wait.csv", WAIT_EXPERIMENT, 0)
-
 ###################################################################################
 # MAIN
 ###################################################################################
@@ -708,12 +627,10 @@ if __name__ == '__main__':
     parser.add_argument("-w", "--workload", help='eval workload', action='store_true')
     parser.add_argument("-r", "--recovery", help='eval recovery', action='store_true')
     parser.add_argument("-s", "--storage", help='eval storage', action='store_true')
-    parser.add_argument("-t", "--wait", help='eval wait', action='store_true')
 
     parser.add_argument("-a", "--workload_plot", help='plot workload', action='store_true')
     parser.add_argument("-b", "--recovery_plot", help='plot recovery', action='store_true')
     parser.add_argument("-c", "--storage_plot", help='plot storage', action='store_true')
-    parser.add_argument("-d", "--wait_plot", help='plot wait', action='store_true')
 
     args = parser.parse_args()
 
@@ -732,9 +649,6 @@ if __name__ == '__main__':
     if args.storage:
         storage_eval()
 
-    if args.wait:
-        wait_eval()
-
     ## PLOT
 
     if args.workload_plot:
@@ -745,8 +659,5 @@ if __name__ == '__main__':
 
     if args.storage_plot:
         storage_plot()
-
-    if args.wait_plot:
-        wait_plot()
 
     #create_legend()
