@@ -6,38 +6,21 @@
 
 from __future__ import print_function
 
-import argparse
-import argparse
-import brewer2mpl
 import csv
-import datetime
-import fileinput
-import fnmatch
-from functools import wraps
 import logging
-from lxml import etree
 import math
-from matplotlib import rc
 import matplotlib
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.font_manager import FontProperties
 from matplotlib.ticker import LinearLocator
 from matplotlib.ticker import LogLocator
 from matplotlib.ticker import MaxNLocator
-import numpy
-from operator import add
-from options import *
 import os
-from pprint import pprint, pformat
 import pprint
 import pylab
-import re
-import string
 import subprocess
-import sys
-import time
+import argparse
 
-import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plot
 import numpy as np
 
