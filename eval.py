@@ -115,10 +115,12 @@ OUTPUT_FILE = "outputfile.summary"
 
 # Refer LoggingType in common/types.h
 LOGGING_TYPES = (0, 1, 2, 3, 4)
+RECOVERY_LOGGING_TYPES = LOGGING_TYPES[1:]
 
 LOGGING_NAMES = ("disabled", 
                  "nvm_wal", "nvm_wbl", 
                  "hdd_wal", "hdd_wbl")
+RECOVERY_LOGGING_NAMES = LOGGING_NAMES[1:]
 
 SCALE_FACTOR = 1
 DATABASE_FILE_SIZE = 4096  # DATABASE FILE SIZE (MB)
@@ -130,13 +132,19 @@ CLIENT_COUNTS = (1, 2, 4, 8)
 YCSB_BENCHMARK_TYPE = 1
 TPCC_BENCHMARK_TYPE = 2
 
+RECOVERY_TRANSACTION_COUNTS = (1, 3, 5)
+
 YCSB_UPDATE_RATIOS = (0, 0.1, 0.5, 0.9)
 YCSB_UPDATE_NAMES = ("read-only", "read-heavy", "balanced", "write-heavy")
 
 YCSB_SKEW_FACTORS = (1, 2)
 YCSB_SKEW_NAMES = ("low-skew", "high-skew")
 
+INVALID_UPDATE_RATIO = 0
+INVALID_SKEW_FACTOR = 1;
+
 EXPERIMENT_TYPE_THROUGHPUT = 1
+EXPERIMENT_TYPE_RECOVERY = 2
 
 YCSB_THROUGHPUT_DIR = BASE_DIR + "/results/throughput/ycsb/"
 YCSB_THROUGHPUT_EXPERIMENT = 1
@@ -145,6 +153,14 @@ YCSB_THROUGHPUT_CSV = "ycsb_throughput.csv"
 TPCC_THROUGHPUT_DIR = BASE_DIR + "/results/throughput/tpcc/"
 TPCC_THROUGHPUT_EXPERIMENT = 2 
 TPCC_THROUGHPUT_CSV = "tpcc_throughput.csv"
+
+YCSB_RECOVERY_DIR = BASE_DIR + "/results/recovery/ycsb/"
+YCSB_RECOVERY_EXPERIMENT = 3
+YCSB_RECOVERY_CSV = "ycsb_recovery.csv"
+
+TPCC_RECOVERY_DIR = BASE_DIR + "/results/recovery/tpcc/"
+TPCC_RECOVERY_EXPERIMENT = 4
+TPCC_RECOVERY_CSV = "tpcc_recovery.csv"
 
 ###################################################################################
 # UTILS
@@ -260,7 +276,7 @@ def create_legend_logging_types():
 
     figlegend.savefig('legend_logging_types.pdf')
 
-def create_ycsb_throughput_bar_chart(datasets):
+def create_ycsb_throughput_line_chart(datasets):
     fig = plot.figure()
     ax1 = fig.add_subplot(111)
 
@@ -310,6 +326,54 @@ def create_ycsb_throughput_bar_chart(datasets):
 
     return (fig)
 
+def create_ycsb_recovery_bar_chart(datasets):
+    fig = plot.figure()
+    ax1 = fig.add_subplot(111)
+
+    # X-AXIS
+    x_labels = [str(i) for i in RECOVERY_TRANSACTION_COUNTS]
+    N = len(x_labels)
+    M = len(RECOVERY_LOGGING_NAMES)
+    ind = np.arange(N)
+    margin = 0.15
+    width = ((1.0 - 2 * margin) / M)
+    bars = [None] * M * N
+
+    for group in xrange(len(datasets)):
+        # GROUP
+        group_data = []
+
+        for line in  xrange(len(datasets[group])):
+            for col in  xrange(len(datasets[group][line])):
+                if col == 1:
+                    group_data.append(datasets[group][line][col])
+
+        LOG.info("group_data = %s", str(group_data))
+
+        bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
+                                      color=OPT_COLORS[group],
+                                      linewidth=BAR_LINEWIDTH)        
+
+    # GRID
+    makeGrid(ax1)
+            
+    # Y-AXIS
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
+    ax1.minorticks_off()
+    ax1.set_ylabel("Recovery Latency (ms)", fontproperties=LABEL_FP)
+
+    # X-AXIS
+    ax1.set_xticks(ind + 0.5)              
+    ax1.set_xlabel("Number of Clients", fontproperties=LABEL_FP)
+    ax1.set_xticks(ind + margin + (group * width)/2.0 )
+    ax1.set_xticklabels(x_labels)
+    
+    for label in ax1.get_yticklabels() :
+        label.set_fontproperties(TICK_FP)
+    for label in ax1.get_xticklabels() :
+        label.set_fontproperties(TICK_FP)
+
+    return (fig)
 
 ###################################################################################
 # PLOT HELPERS
@@ -337,7 +401,7 @@ def ycsb_throughput_plot():
                 dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
                 datasets.append(dataset)
     
-            fig = create_ycsb_throughput_bar_chart(datasets)
+            fig = create_ycsb_throughput_line_chart(datasets)
         
             fileName = "ycsb-" + "throughput-" + ycsb_skew_name + "-" + ycsb_update_name + ".pdf"
         
@@ -357,11 +421,51 @@ def tpcc_throughput_plot():
         dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
         datasets.append(dataset)
 
-    fig = create_ycsb_throughput_bar_chart(datasets)
+    fig = create_ycsb_throughput_line_chart(datasets)
 
     fileName = "tpcc-" + "throughput" + ".pdf"
     
     saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+
+# YCSB RECOVERY -- PLOT
+def ycsb_recovery_plot():
+
+    datasets = []
+    for logging_type in RECOVERY_LOGGING_TYPES:
+
+        # figure out logging name and ycsb update name
+        logging_name = getLoggingName(logging_type)
+
+        data_file = YCSB_RECOVERY_DIR + "/" + logging_name + "/" + YCSB_RECOVERY_CSV
+
+        dataset = loadDataFile(len(RECOVERY_TRANSACTION_COUNTS), 2, data_file)
+        datasets.append(dataset)
+
+    fig = create_ycsb_recovery_bar_chart(datasets)
+
+    fileName = "ycsb-" + "recovery" + ".pdf"
+    
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+    
+# TPCC RECOVERY -- PLOT
+def tpcc_recovery_plot():
+
+    datasets = []
+    for logging_type in RECOVERY_LOGGING_TYPES:
+
+        # figure out logging name and ycsb update name
+        logging_name = getLoggingName(logging_type)
+
+        data_file = TPCC_RECOVERY_DIR + "/" + logging_name + "/" + TPCC_RECOVERY_CSV
+
+        dataset = loadDataFile(len(RECOVERY_TRANSACTION_COUNTS), 2, data_file)
+        datasets.append(dataset)
+
+    fig = create_ycsb_recovery_bar_chart(datasets)
+
+    fileName = "tpcc-" + "recovery" + ".pdf"
+    
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)    
 
 ###################################################################################
 # EVAL HELPERS
@@ -380,6 +484,7 @@ def run_experiment(program,
                    logging_type,
                    benchmark_type,
                    client_count,
+                   transaction_count,
                    ycsb_update_ratio,
                    ycsb_skew_factor):
 
@@ -391,7 +496,7 @@ def run_experiment(program,
                      "-l", str(logging_type),
                      "-k", str(SCALE_FACTOR),
                      "-f", str(DATABASE_FILE_SIZE),
-                     "-t", str(TRANSACTION_COUNT),
+                     "-t", str(transaction_count),
                      "-b", str(client_count),
                      "-u", str(ycsb_update_ratio),
                      "-s", str(ycsb_skew_factor),
@@ -417,18 +522,21 @@ def collect_stats(result_dir,
         scale_factor = data[3]
         backend_count = data[4]
         ycsb_skew_factor = data[5]
+        transaction_count = data[6]
 
-        stat = data[6]
+        stat = data[7]
 
         # figure out logging name and ycsb update name
         logging_name = getLoggingName(logging_type)
-        ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
-        ycsb_skew_name = getYCSBSkewName(ycsb_skew_factor)
 
         # MAKE RESULTS FILE DIR
         if category == YCSB_THROUGHPUT_EXPERIMENT:
+            ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+            ycsb_skew_name = getYCSBSkewName(ycsb_skew_factor)
             result_directory = result_dir + "/" + ycsb_skew_name + "/" + ycsb_update_name + "/" + logging_name
         elif category == TPCC_THROUGHPUT_EXPERIMENT:
+            result_directory = result_dir + "/" + logging_name
+        elif category == YCSB_RECOVERY_EXPERIMENT or category == TPCC_RECOVERY_EXPERIMENT:
             result_directory = result_dir + "/" + logging_name
 
         if not os.path.exists(result_directory):
@@ -440,6 +548,8 @@ def collect_stats(result_dir,
         # WRITE OUT STATS
         if category == YCSB_THROUGHPUT_EXPERIMENT or category == TPCC_THROUGHPUT_EXPERIMENT:
             result_file.write(str(backend_count) + " , " + str(stat) + "\n")
+        elif category == YCSB_RECOVERY_EXPERIMENT or category == TPCC_RECOVERY_EXPERIMENT:
+            result_file.write(str(transaction_count) + " , " + str(stat) + "\n")
 
         result_file.close()
 
@@ -482,6 +592,7 @@ def ycsb_throughput_eval():
                                    logging_type,
                                    YCSB_BENCHMARK_TYPE,
                                    client_count,
+                                   TRANSACTION_COUNT,
                                    ycsb_update_ratio,
                                    ycsb_skew_factor)
     
@@ -493,9 +604,6 @@ def tpcc_throughput_eval():
 
     # CLEAN UP RESULT DIR
     clean_up_dir(TPCC_THROUGHPUT_DIR)
-
-    tpcc_update_ratio = 0
-    tpcc_skew_factor = 1
     
     for logging_type in LOGGING_TYPES:
         for client_count in CLIENT_COUNTS:
@@ -506,12 +614,62 @@ def tpcc_throughput_eval():
                            logging_type,
                            TPCC_BENCHMARK_TYPE,
                            client_count,
-                           tpcc_update_ratio,
-                           tpcc_skew_factor)
+                           TRANSACTION_COUNT,
+                           INVALID_UPDATE_RATIO,
+                           INVALID_SKEW_FACTOR)
 
             # COLLECT STATS
             collect_stats(TPCC_THROUGHPUT_DIR, TPCC_THROUGHPUT_CSV, TPCC_THROUGHPUT_EXPERIMENT)
 
+# YCSB RECOVERY -- EVAL
+def ycsb_recovery_eval():
+
+    # CLEAN UP RESULT DIR
+    clean_up_dir(YCSB_RECOVERY_DIR)
+
+    client_count = 1
+    ycsb_recovery_update_ratio = 1
+    ycsb_recovery_skew_factor = 1
+    
+    for recovery_transaction_count in RECOVERY_TRANSACTION_COUNTS:
+            for logging_type in LOGGING_TYPES:
+                    
+                # RUN EXPERIMENT
+                run_experiment(LOGGING,
+                               EXPERIMENT_TYPE_RECOVERY,
+                               logging_type,
+                               YCSB_BENCHMARK_TYPE,
+                               client_count,
+                               recovery_transaction_count,
+                               ycsb_recovery_update_ratio,
+                               ycsb_recovery_skew_factor)
+
+                # COLLECT STATS
+                collect_stats(YCSB_RECOVERY_DIR, YCSB_RECOVERY_CSV, YCSB_RECOVERY_EXPERIMENT)
+
+# TPCC RECOVERY -- EVAL
+def tpcc_recovery_eval():
+
+    # CLEAN UP RESULT DIR
+    clean_up_dir(TPCC_RECOVERY_DIR)
+
+    client_count = 1
+    
+    for recovery_transaction_count in RECOVERY_TRANSACTION_COUNTS:
+            for logging_type in LOGGING_TYPES:
+                    
+                # RUN EXPERIMENT
+                run_experiment(LOGGING,
+                               EXPERIMENT_TYPE_RECOVERY,
+                               logging_type,
+                               TPCC_BENCHMARK_TYPE,
+                               client_count,
+                               recovery_transaction_count,
+                               INVALID_UPDATE_RATIO,
+                               INVALID_SKEW_FACTOR)
+
+                # COLLECT STATS
+                collect_stats(TPCC_RECOVERY_DIR, TPCC_RECOVERY_CSV, TPCC_RECOVERY_EXPERIMENT)
 
 ###################################################################################
 # MAIN
@@ -523,11 +681,15 @@ if __name__ == '__main__':
                                      formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=50))
 
     parser.add_argument("-x", "--enable-sdv", help='enable sdv', action='store_true')
-    parser.add_argument("-a", "--ycsb_throughput", help='eval ycsb_throughput', action='store_true')
-    parser.add_argument("-b", "--tpcc_throughput", help='eval tpcc_throughput', action='store_true')
+    parser.add_argument("-a", "--ycsb_throughput_eval", help='eval ycsb_throughput', action='store_true')
+    parser.add_argument("-b", "--tpcc_throughput_eval", help='eval tpcc_throughput', action='store_true')
+    parser.add_argument("-c", "--ycsb_recovery_eval", help='eval ycsb_recovery', action='store_true')
+    parser.add_argument("-d", "--tpcc_recovery_eval", help='eval tpcc_recovery', action='store_true')
 
     parser.add_argument("-m", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
     parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
+    parser.add_argument("-o", "--ycsb_recovery_plot", help='plot ycsb_recovery', action='store_true')
+    parser.add_argument("-p", "--tpcc_recovery_plot", help='plot tpcc_recovery', action='store_true')
 
     args = parser.parse_args()
 
@@ -537,12 +699,17 @@ if __name__ == '__main__':
 
     ## EVAL
 
-    if args.ycsb_throughput:
+    if args.ycsb_throughput_eval:
         ycsb_throughput_eval()
 
-    if args.tpcc_throughput:
+    if args.tpcc_throughput_eval:
         tpcc_throughput_eval()
 
+    if args.ycsb_recovery_eval:
+        ycsb_recovery_eval()
+
+    if args.tpcc_recovery_eval:
+        tpcc_recovery_eval()
 
     ## PLOT
 
@@ -551,5 +718,11 @@ if __name__ == '__main__':
 
     if args.tpcc_throughput_plot:
         tpcc_throughput_plot()
+
+    if args.ycsb_recovery_plot:
+        ycsb_recovery_plot()
+
+    if args.tpcc_recovery_plot:
+        tpcc_recovery_plot()
 
     #create_legend_logging_types()
