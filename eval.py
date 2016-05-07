@@ -133,8 +133,8 @@ TRANSACTION_COUNT = 10
 
 CLIENT_COUNTS = (1, 2, 4, 8)
 
-YCSB_UPDATE_RATIOS = (0, 0.5)
-YCSB_UPDATE_NAMES = ("read_only", "balanced")
+YCSB_UPDATE_RATIOS = (0, 0.1, 0.5, 0.9)
+YCSB_UPDATE_NAMES = ("read_only", "read-heavy", "balanced", "write-heavy")
 
 YCSB_WORKLOAD_DIR = BASE_DIR + "/results/workload/ycsb/"
 YCSB_WORKLOAD_EXPERIMENT = 1
