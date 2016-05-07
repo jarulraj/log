@@ -23,7 +23,8 @@ import argparse
 
 import matplotlib.pyplot as plot
 import numpy as np
-
+from operator import add
+from pprint import pprint, pformat
 
 ###################################################################################
 # LOGGING CONFIGURATION
@@ -146,6 +147,9 @@ INVALID_SKEW_FACTOR = 1;
 EXPERIMENT_TYPE_THROUGHPUT = 1
 EXPERIMENT_TYPE_RECOVERY = 2
 
+STORAGE_LOGGING_TYPES = ("WAL", "WBL")
+STORAGE_LABELS = ("Table", "Index", "Log", "Checkpoint", "Other")
+
 YCSB_THROUGHPUT_DIR = BASE_DIR + "/results/throughput/ycsb/"
 YCSB_THROUGHPUT_EXPERIMENT = 1
 YCSB_THROUGHPUT_CSV = "ycsb_throughput.csv"
@@ -161,6 +165,12 @@ YCSB_RECOVERY_CSV = "ycsb_recovery.csv"
 TPCC_RECOVERY_DIR = BASE_DIR + "/results/recovery/tpcc/"
 TPCC_RECOVERY_EXPERIMENT = 4
 TPCC_RECOVERY_CSV = "tpcc_recovery.csv"
+
+YCSB_STORAGE_DIR = BASE_DIR + "/results/storage/ycsb/"
+YCSB_STORAGE_CSV = "ycsb_storage.csv"
+
+TPCC_STORAGE_DIR = BASE_DIR + "/results/storage/tpcc/"
+TPCC_STORAGE_CSV = "tpcc_storage.csv"
 
 ###################################################################################
 # UTILS
@@ -276,6 +286,33 @@ def create_legend_logging_types():
 
     figlegend.savefig('legend_logging_types.pdf')
 
+def create_legend_storage():
+    fig = pylab.figure()
+    ax1 = fig.add_subplot(111)
+
+    figlegend = pylab.figure(figsize=(10, 0.5))
+
+    num_items = 5;   
+    ind = np.arange(1)  
+    margin = 0.10
+    width = (1.0 - 2 * margin) / num_items      
+      
+    bars = [None] * len(STORAGE_LABELS) * 2
+
+    for group in xrange(len(STORAGE_LABELS)):        
+        data = [1]
+        bars[group] = ax1.bar(ind + margin + (group * width), data, width, 
+                              color=OPT_STACK_COLORS[group], linewidth=BAR_LINEWIDTH)
+        
+    # LEGEND
+    figlegend.legend(bars, STORAGE_LABELS, prop=LABEL_FP, 
+                     loc=1, ncol=len(STORAGE_LABELS), 
+                     mode="expand", shadow=OPT_LEGEND_SHADOW, 
+                     frameon=False, borderaxespad=0.0, 
+                     handleheight=2, handlelength=3.5)
+
+    figlegend.savefig('legend_storage.pdf') 
+
 def create_ycsb_throughput_line_chart(datasets):
     fig = plot.figure()
     ax1 = fig.add_subplot(111)
@@ -375,6 +412,54 @@ def create_ycsb_recovery_bar_chart(datasets):
 
     return (fig)
 
+def create_ycsb_storage_bar_chart(datasets):
+    fig = plot.figure()
+    ax1 = fig.add_subplot(111)
+    
+    num_items = len(STORAGE_LOGGING_TYPES);
+    ind = np.arange(num_items)  
+    margin = 0.2
+    width = 1.0
+
+    col_offset = 0.2
+    col_width = width - col_offset
+
+    bars = [None] * len(STORAGE_LABELS) * 2
+    YLIMIT = len(STORAGE_LABELS)
+        
+    datasets = map(list, map(None,*datasets))
+    
+    # TYPE      
+    bottom_list = [0] * len(datasets[0])   
+    for type in  xrange(len(datasets)):        
+        LOG.info("TYPE :: %s", datasets[type])
+
+        bars[type] = ax1.bar(ind + margin + col_offset, datasets[type], col_width, 
+                             color=OPT_STACK_COLORS[type], linewidth=BAR_LINEWIDTH,
+                             bottom = bottom_list)
+        bottom_list = map(add, bottom_list, datasets[type])
+        
+    # GRID
+    axes = ax1.get_axes()
+    makeGrid(ax1)
+        
+    # Y-AXIS
+    ax1.set_ylabel("Storage (GB)", fontproperties=LABEL_FP)
+    ax1.yaxis.set_major_locator(MaxNLocator(5))
+    axes.set_ylim(0, YLIMIT)
+        
+    # X-AXIS
+    ax1.tick_params(axis='x', which='both', top='off', bottom='off')
+    ax1.set_xticks(ind + margin + 0.6)
+    ax1.set_xticklabels(STORAGE_LOGGING_TYPES)
+        
+    for label in ax1.get_yticklabels() :
+        label.set_fontproperties(TICK_FP)
+    for label in ax1.get_xticklabels() :
+        label.set_fontproperties(TICK_FP)
+    
+    return (fig)
+
 ###################################################################################
 # PLOT HELPERS
 ###################################################################################
@@ -466,6 +551,32 @@ def tpcc_recovery_plot():
     fileName = "tpcc-" + "recovery" + ".pdf"
     
     saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)    
+
+# YCSB STORAGE -- PLOT               
+def ycsb_storage_plot():    
+    
+    data_file =  os.path.realpath(os.path.join(YCSB_STORAGE_DIR, YCSB_STORAGE_CSV))
+
+    dataset = loadDataFile(len(STORAGE_LOGGING_TYPES), len(STORAGE_LABELS) + 1, data_file)
+                                      
+    fig = create_ycsb_storage_bar_chart(dataset)
+
+    fileName = "ycsb-storage.pdf"
+    
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/2, height=OPT_GRAPH_HEIGHT/2.0)
+    
+# TPCC STORAGE -- PLOT               
+def tpcc_storage_plot():    
+    
+    data_file =  os.path.realpath(os.path.join(TPCC_STORAGE_DIR, TPCC_STORAGE_CSV))
+
+    dataset = loadDataFile(len(STORAGE_LOGGING_TYPES), len(STORAGE_LABELS) + 1, data_file)
+                                      
+    fig = create_ycsb_storage_bar_chart(dataset)                        
+
+    fileName = "tpcc-storage.pdf"
+    
+    saveGraph(fig, fileName, width=OPT_GRAPH_WIDTH/2, height=OPT_GRAPH_HEIGHT/2.0)     
 
 ###################################################################################
 # EVAL HELPERS
@@ -690,6 +801,8 @@ if __name__ == '__main__':
     parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
     parser.add_argument("-o", "--ycsb_recovery_plot", help='plot ycsb_recovery', action='store_true')
     parser.add_argument("-p", "--tpcc_recovery_plot", help='plot tpcc_recovery', action='store_true')
+    parser.add_argument("-q", "--ycsb_storage_plot", help='plot ycsb_storage', action='store_true')
+    parser.add_argument("-r", "--tpcc_storage_plot", help='plot tpcc_storage', action='store_true')
 
     args = parser.parse_args()
 
@@ -725,4 +838,11 @@ if __name__ == '__main__':
     if args.tpcc_recovery_plot:
         tpcc_recovery_plot()
 
+    if args.ycsb_storage_plot:
+        ycsb_storage_plot()
+
+    if args.tpcc_storage_plot:
+        tpcc_storage_plot()
+
     #create_legend_logging_types()
+    create_legend_storage()
