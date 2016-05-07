@@ -65,8 +65,8 @@ OPT_PATTERNS = ([ "////", "////", "o", "o", "\\\\" , "\\\\" , "//////", "//////"
 
 OPT_LABEL_WEIGHT = 'bold'
 OPT_LINE_COLORS = COLOR_MAP
-OPT_LINE_WIDTH = 3.0
-OPT_MARKER_SIZE = 6.0
+OPT_LINE_WIDTH = 6.0
+OPT_MARKER_SIZE = 10.0
 DATA_LABELS = []
 
 
@@ -75,13 +75,10 @@ OPT_LINE_STYLES= ('-', ':', '--', '-.')
 
 # SET FONT
 
-LABEL_FONT_SIZE = 14
-TICK_FONT_SIZE = 12
-TINY_FONT_SIZE = 8
-LEGEND_FONT_SIZE = 16
-
-SMALL_LABEL_FONT_SIZE = 10
-SMALL_LEGEND_FONT_SIZE = 10
+LABEL_FONT_SIZE = 16
+TICK_FONT_SIZE = 14
+TINY_FONT_SIZE = 10
+LEGEND_FONT_SIZE = 18
 
 AXIS_LINEWIDTH = 1.3
 BAR_LINEWIDTH = 1.2
@@ -95,9 +92,6 @@ LABEL_FP = FontProperties(style='normal', size=LABEL_FONT_SIZE, weight='bold')
 TICK_FP = FontProperties(style='normal', size=TICK_FONT_SIZE)
 TINY_FP = FontProperties(style='normal', size=TINY_FONT_SIZE)
 LEGEND_FP = FontProperties(style='normal', size=LEGEND_FONT_SIZE, weight='bold')
-
-SMALL_LABEL_FP = FontProperties(style='normal', size=SMALL_LABEL_FONT_SIZE, weight='bold')
-SMALL_LEGEND_FP = FontProperties(style='normal', size=SMALL_LEGEND_FONT_SIZE, weight='bold')
 
 YAXIS_TICKS = 3
 YAXIS_ROUND = 1000.0
@@ -134,11 +128,11 @@ TRANSACTION_COUNT = 10
 CLIENT_COUNTS = (1, 2, 4, 8)
 
 YCSB_UPDATE_RATIOS = (0, 0.1, 0.5, 0.9)
-YCSB_UPDATE_NAMES = ("read_only", "read-heavy", "balanced", "write-heavy")
+YCSB_UPDATE_NAMES = ("read-only", "read-heavy", "balanced", "write-heavy")
 
-YCSB_WORKLOAD_DIR = BASE_DIR + "/results/workload/ycsb/"
-YCSB_WORKLOAD_EXPERIMENT = 1
-YCSB_WORKLOAD_CSV = "ycsb_workload.csv"
+YCSB_THROUGHPUT_DIR = BASE_DIR + "/results/throughput/ycsb/"
+YCSB_THROUGHPUT_EXPERIMENT = 1
+YCSB_THROUGHPUT_CSV = "ycsb_throughput.csv"
 
 ###################################################################################
 # UTILS
@@ -214,11 +208,11 @@ def getLoggingName(logging_type):
 # PLOT
 ###################################################################################
 
-def create_legend():
+def create_legend_logging_types():
     fig = pylab.figure()
     ax1 = fig.add_subplot(111)
 
-    figlegend = pylab.figure(figsize=(12, 3.0))
+    figlegend = pylab.figure(figsize=(12, 0.5))
 
     N = len(LOGGING_NAMES);
     ind = np.arange(1)
@@ -235,30 +229,27 @@ def create_legend():
                             linewidth=BAR_LINEWIDTH)
         idx = idx + 1
 
+    LOGGING_NAMES_UPPER_CASE = [x.upper() for x in LOGGING_NAMES]
+    
     # LEGEND
-    figlegend.legend(bars, LOGGING_NAMES, prop=LEGEND_FP,
-                     loc=1, ncol=5,
+    figlegend.legend(bars, LOGGING_NAMES_UPPER_CASE, prop=LEGEND_FP,
+                     loc=1, ncol=len(LOGGING_NAMES),
                      mode="expand", shadow=OPT_LEGEND_SHADOW,
                      frameon=False, borderaxespad=0.0,
-                     handleheight=1.5, handlelength=4)
+                     handleheight=1, handlelength=4)
 
-    figlegend.savefig('legend.pdf')
+    figlegend.savefig('legend_logging_types.pdf')
 
-def create_ycsb_workload_bar_chart(datasets):
+def create_ycsb_throughput_bar_chart(datasets):
     fig = plot.figure()
     ax1 = fig.add_subplot(111)
 
     # X-AXIS
-    x_values = np.arange(len(CLIENT_COUNTS))
-    N = len(x_values)
     x_labels = [str(i) for i in CLIENT_COUNTS]
+    N = len(x_labels)
+    ind = np.arange(N)  
 
-    M = len(LOGGING_NAMES)
-    ind = np.arange(N)
-    margin = 0.15
-    width = ((1.0 - 2 * margin) / M)
-    bars = [None] * M * N
-
+    idx = 0
     for group in xrange(len(datasets)):
         # GROUP
         group_data = []
@@ -270,23 +261,27 @@ def create_ycsb_workload_bar_chart(datasets):
 
         LOG.info("group_data = %s", str(group_data))
 
-        bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
-                              color=OPT_COLORS[group],
-                              linewidth=BAR_LINEWIDTH)
+        ax1.plot(ind + 0.5, group_data, 
+                 color=OPT_LINE_COLORS[idx], 
+                 linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, 
+                 label=str(group))        
+
+        idx = idx + 1  
 
 
     # GRID
     makeGrid(ax1)
-
+            
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
 
     # X-AXIS
+    ax1.set_xticks(ind + 0.5)              
     ax1.set_xlabel("Number of Clients", fontproperties=LABEL_FP)
-    ax1.set_xticks(ind + margin + (group * width)/2.0 )
-    ax1.set_xticklabels(x_labels)
+    ax1.set_xticklabels(x_labels)    
+    ax1.set_xlim([0.25, N - 0.25])
 
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
@@ -300,8 +295,8 @@ def create_ycsb_workload_bar_chart(datasets):
 # PLOT HELPERS
 ###################################################################################
 
-# WORKLOAD -- PLOT
-def ycsb_workload_plot():
+# THROUGHPUT -- PLOT
+def ycsb_throughput_plot():
 
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
 
@@ -313,16 +308,16 @@ def ycsb_workload_plot():
             # figure out logging name and ycsb update name
             logging_name = getLoggingName(logging_type)
     
-            data_file = YCSB_WORKLOAD_DIR + "/" + ycsb_update_name + "/" + logging_name + "/" + YCSB_WORKLOAD_CSV
+            data_file = YCSB_THROUGHPUT_DIR + "/" + ycsb_update_name + "/" + logging_name + "/" + YCSB_THROUGHPUT_CSV
     
             dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
             datasets.append(dataset)
 
-        fig = create_ycsb_workload_bar_chart(datasets)
+        fig = create_ycsb_throughput_bar_chart(datasets)
     
-        fileName = "ycsb_" + ycsb_update_name + ".pdf"
+        fileName = "ycsb-" + "throughput-" + ycsb_update_name + ".pdf"
     
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
 
 
 ###################################################################################
@@ -381,7 +376,7 @@ def collect_stats(result_dir,
         ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
 
         # MAKE RESULTS FILE DIR
-        if category == YCSB_WORKLOAD_EXPERIMENT:
+        if category == YCSB_THROUGHPUT_EXPERIMENT:
             result_directory = result_dir + "/" + ycsb_update_name + "/" + logging_name
 
         if not os.path.exists(result_directory):
@@ -391,7 +386,7 @@ def collect_stats(result_dir,
         result_file = open(file_name, "a")
 
         # WRITE OUT STATS
-        if category == YCSB_WORKLOAD_EXPERIMENT:
+        if category == YCSB_THROUGHPUT_EXPERIMENT:
             result_file.write(str(backend_count) + " , " + str(stat) + "\n")
 
         result_file.close()
@@ -418,11 +413,11 @@ def reset_nvm_latency():
         os.chdir(cwd)
         FNULL.close()
 
-# WORKLOAD -- EVAL
-def ycsb_workload_eval():
+# THROUGHPUT -- EVAL
+def ycsb_throughput_eval():
 
     # CLEAN UP RESULT DIR
-    clean_up_dir(YCSB_WORKLOAD_DIR)
+    clean_up_dir(YCSB_THROUGHPUT_DIR)
 
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
         for logging_type in LOGGING_TYPES:
@@ -430,13 +425,13 @@ def ycsb_workload_eval():
                 
                 # RUN EXPERIMENT
                 run_experiment(LOGGING,
-                               YCSB_WORKLOAD_EXPERIMENT,
+                               YCSB_THROUGHPUT_EXPERIMENT,
                                logging_type,
                                client_count,
                                ycsb_update_ratio)
 
                 # COLLECT STATS
-                collect_stats(YCSB_WORKLOAD_DIR, YCSB_WORKLOAD_CSV, YCSB_WORKLOAD_EXPERIMENT)
+                collect_stats(YCSB_THROUGHPUT_DIR, YCSB_THROUGHPUT_CSV, YCSB_THROUGHPUT_EXPERIMENT)
 
 
 ###################################################################################
@@ -447,9 +442,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run Write Behind Logging Experiments')
 
     parser.add_argument("-x", "--enable-sdv", help='enable sdv', action='store_true')
-    parser.add_argument("-w", "--ycsb_workload", help='eval ycsb_workload', action='store_true')
+    parser.add_argument("-w", "--ycsb_throughput", help='eval ycsb_throughput', action='store_true')
 
-    parser.add_argument("-a", "--ycsb_workload_plot", help='plot ycsb_workload', action='store_true')
+    parser.add_argument("-a", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
 
     args = parser.parse_args()
 
@@ -459,12 +454,12 @@ if __name__ == '__main__':
 
     ## EVAL
 
-    if args.ycsb_workload:
-        ycsb_workload_eval()
+    if args.ycsb_throughput:
+        ycsb_throughput_eval()
 
     ## PLOT
 
-    if args.ycsb_workload_plot:
-        ycsb_workload_plot()
+    if args.ycsb_throughput_plot:
+        ycsb_throughput_plot()
 
-    #create_legend()
+    create_legend_logging_types()
