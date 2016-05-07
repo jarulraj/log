@@ -130,6 +130,9 @@ CLIENT_COUNTS = (1, 2, 4, 8)
 YCSB_UPDATE_RATIOS = (0, 0.1, 0.5, 0.9)
 YCSB_UPDATE_NAMES = ("read-only", "read-heavy", "balanced", "write-heavy")
 
+YCSB_SKEW_FACTORS = (1, 2)
+YCSB_SKEW_NAMES = ("low-skew", "high-skew")
+
 YCSB_THROUGHPUT_DIR = BASE_DIR + "/results/throughput/ycsb/"
 YCSB_THROUGHPUT_EXPERIMENT = 1
 YCSB_THROUGHPUT_CSV = "ycsb_throughput.csv"
@@ -203,6 +206,14 @@ def getLoggingName(logging_type):
     logging_name = LOGGING_NAMES[logging_type_offset]
 
     return logging_name
+
+# Figure out ycsb skew name
+def getYCSBSkewName(ycsb_skew):
+    
+    ycsb_skew_offset = YCSB_SKEW_FACTORS.index(int(ycsb_skew))
+    ycsb_skew_name = YCSB_SKEW_NAMES[ycsb_skew_offset]
+
+    return ycsb_skew_name
 
 ###################################################################################
 # PLOT
@@ -298,26 +309,30 @@ def create_ycsb_throughput_bar_chart(datasets):
 # THROUGHPUT -- PLOT
 def ycsb_throughput_plot():
 
-    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+    for ycsb_skew_factor in YCSB_SKEW_FACTORS:
 
-        ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+        ycsb_skew_name = getYCSBSkewName(ycsb_skew_factor)
 
-        datasets = []
-        for logging_type in LOGGING_TYPES:
-
-            # figure out logging name and ycsb update name
-            logging_name = getLoggingName(logging_type)
+        for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
     
-            data_file = YCSB_THROUGHPUT_DIR + "/" + ycsb_update_name + "/" + logging_name + "/" + YCSB_THROUGHPUT_CSV
+            ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
     
-            dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
-            datasets.append(dataset)
-
-        fig = create_ycsb_throughput_bar_chart(datasets)
+            datasets = []
+            for logging_type in LOGGING_TYPES:
     
-        fileName = "ycsb-" + "throughput-" + ycsb_update_name + ".pdf"
+                # figure out logging name and ycsb update name
+                logging_name = getLoggingName(logging_type)
+        
+                data_file = YCSB_THROUGHPUT_DIR + "/" + ycsb_skew_name + "/" + ycsb_update_name + "/" + logging_name + "/" + YCSB_THROUGHPUT_CSV
+        
+                dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
+                datasets.append(dataset)
     
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+            fig = create_ycsb_throughput_bar_chart(datasets)
+        
+            fileName = "ycsb-" + "throughput-" + ycsb_skew_name + "-" + ycsb_update_name + ".pdf"
+        
+            saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
 
 
 ###################################################################################
@@ -336,7 +351,8 @@ def run_experiment(program,
                    experiment_type,
                    logging_type,
                    client_count,
-                   ycsb_update_ratio):
+                   ycsb_update_ratio,
+                   ycsb_skew_factor):
 
     # cleanup
     subprocess.call(["rm -f " + OUTPUT_FILE], shell=True)
@@ -348,7 +364,8 @@ def run_experiment(program,
                      "-f", str(DATABASE_FILE_SIZE),
                      "-t", str(TRANSACTION_COUNT),
                      "-b", str(client_count),
-                     "-u", str(ycsb_update_ratio)])
+                     "-u", str(ycsb_update_ratio),
+                     "-s", str(ycsb_skew_factor)])
 
 
 # COLLECT STATS
@@ -368,16 +385,18 @@ def collect_stats(result_dir,
         ycsb_update_ratio = data[1]
         scale_factor = data[2]
         backend_count = data[3]
+        ycsb_skew_factor = data[4]
 
-        stat = data[4]
+        stat = data[5]
 
         # figure out logging name and ycsb update name
         logging_name = getLoggingName(logging_type)
         ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+        ycsb_skew_name = getYCSBSkewName(ycsb_skew_factor)
 
         # MAKE RESULTS FILE DIR
         if category == YCSB_THROUGHPUT_EXPERIMENT:
-            result_directory = result_dir + "/" + ycsb_update_name + "/" + logging_name
+            result_directory = result_dir + "/" + ycsb_skew_name + "/" + ycsb_update_name + "/" + logging_name
 
         if not os.path.exists(result_directory):
             os.makedirs(result_directory)
@@ -419,19 +438,21 @@ def ycsb_throughput_eval():
     # CLEAN UP RESULT DIR
     clean_up_dir(YCSB_THROUGHPUT_DIR)
 
-    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
-        for logging_type in LOGGING_TYPES:
-            for client_count in CLIENT_COUNTS:
-                
-                # RUN EXPERIMENT
-                run_experiment(LOGGING,
-                               YCSB_THROUGHPUT_EXPERIMENT,
-                               logging_type,
-                               client_count,
-                               ycsb_update_ratio)
-
-                # COLLECT STATS
-                collect_stats(YCSB_THROUGHPUT_DIR, YCSB_THROUGHPUT_CSV, YCSB_THROUGHPUT_EXPERIMENT)
+    for ycsb_skew_factor in YCSB_SKEW_FACTORS:
+        for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+            for logging_type in LOGGING_TYPES:
+                for client_count in CLIENT_COUNTS:
+                    
+                    # RUN EXPERIMENT
+                    run_experiment(LOGGING,
+                                   YCSB_THROUGHPUT_EXPERIMENT,
+                                   logging_type,
+                                   client_count,
+                                   ycsb_update_ratio,
+                                   ycsb_skew_factor)
+    
+                    # COLLECT STATS
+                    collect_stats(YCSB_THROUGHPUT_DIR, YCSB_THROUGHPUT_CSV, YCSB_THROUGHPUT_EXPERIMENT)
 
 
 ###################################################################################
