@@ -127,15 +127,24 @@ TRANSACTION_COUNT = 10
 
 CLIENT_COUNTS = (1, 2, 4, 8)
 
+YCSB_BENCHMARK_TYPE = 1
+TPCC_BENCHMARK_TYPE = 2
+
 YCSB_UPDATE_RATIOS = (0, 0.1, 0.5, 0.9)
 YCSB_UPDATE_NAMES = ("read-only", "read-heavy", "balanced", "write-heavy")
 
 YCSB_SKEW_FACTORS = (1, 2)
 YCSB_SKEW_NAMES = ("low-skew", "high-skew")
 
+EXPERIMENT_TYPE_THROUGHPUT = 1
+
 YCSB_THROUGHPUT_DIR = BASE_DIR + "/results/throughput/ycsb/"
 YCSB_THROUGHPUT_EXPERIMENT = 1
 YCSB_THROUGHPUT_CSV = "ycsb_throughput.csv"
+
+TPCC_THROUGHPUT_DIR = BASE_DIR + "/results/throughput/tpcc/"
+TPCC_THROUGHPUT_EXPERIMENT = 2 
+TPCC_THROUGHPUT_CSV = "tpcc_throughput.csv"
 
 ###################################################################################
 # UTILS
@@ -334,6 +343,25 @@ def ycsb_throughput_plot():
         
             saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
 
+# TPCC THROUGHPUT -- PLOT
+def tpcc_throughput_plot():
+
+    datasets = []
+    for logging_type in LOGGING_TYPES:
+
+        # figure out logging name and ycsb update name
+        logging_name = getLoggingName(logging_type)
+
+        data_file = TPCC_THROUGHPUT_DIR + "/" + logging_name + "/" + TPCC_THROUGHPUT_CSV
+
+        dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
+        datasets.append(dataset)
+
+    fig = create_ycsb_throughput_bar_chart(datasets)
+
+    fileName = "tpcc-" + "throughput" + ".pdf"
+    
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
 
 ###################################################################################
 # EVAL HELPERS
@@ -350,13 +378,14 @@ def clean_up_dir(result_directory):
 def run_experiment(program,
                    experiment_type,
                    logging_type,
+                   benchmark_type,
                    client_count,
                    ycsb_update_ratio,
                    ycsb_skew_factor):
 
     # cleanup
     subprocess.call(["rm -f " + OUTPUT_FILE], shell=True)
-
+    
     subprocess.call([program,
                      "-e", str(experiment_type),
                      "-l", str(logging_type),
@@ -365,7 +394,8 @@ def run_experiment(program,
                      "-t", str(TRANSACTION_COUNT),
                      "-b", str(client_count),
                      "-u", str(ycsb_update_ratio),
-                     "-s", str(ycsb_skew_factor)])
+                     "-s", str(ycsb_skew_factor),
+                     "-y", str(benchmark_type)])
 
 
 # COLLECT STATS
@@ -381,13 +411,14 @@ def collect_stats(result_dir,
         data = line.split()
 
         # Collect info
-        logging_type = data[0]
-        ycsb_update_ratio = data[1]
-        scale_factor = data[2]
-        backend_count = data[3]
-        ycsb_skew_factor = data[4]
+        benchmark_type = data[0]
+        logging_type = data[1]
+        ycsb_update_ratio = data[2]
+        scale_factor = data[3]
+        backend_count = data[4]
+        ycsb_skew_factor = data[5]
 
-        stat = data[5]
+        stat = data[6]
 
         # figure out logging name and ycsb update name
         logging_name = getLoggingName(logging_type)
@@ -397,6 +428,8 @@ def collect_stats(result_dir,
         # MAKE RESULTS FILE DIR
         if category == YCSB_THROUGHPUT_EXPERIMENT:
             result_directory = result_dir + "/" + ycsb_skew_name + "/" + ycsb_update_name + "/" + logging_name
+        elif category == TPCC_THROUGHPUT_EXPERIMENT:
+            result_directory = result_dir + "/" + logging_name
 
         if not os.path.exists(result_directory):
             os.makedirs(result_directory)
@@ -405,7 +438,7 @@ def collect_stats(result_dir,
         result_file = open(file_name, "a")
 
         # WRITE OUT STATS
-        if category == YCSB_THROUGHPUT_EXPERIMENT:
+        if category == YCSB_THROUGHPUT_EXPERIMENT or category == TPCC_THROUGHPUT_EXPERIMENT:
             result_file.write(str(backend_count) + " , " + str(stat) + "\n")
 
         result_file.close()
@@ -432,7 +465,7 @@ def reset_nvm_latency():
         os.chdir(cwd)
         FNULL.close()
 
-# THROUGHPUT -- EVAL
+# YCSB THROUGHPUT -- EVAL
 def ycsb_throughput_eval():
 
     # CLEAN UP RESULT DIR
@@ -445,8 +478,9 @@ def ycsb_throughput_eval():
                     
                     # RUN EXPERIMENT
                     run_experiment(LOGGING,
-                                   YCSB_THROUGHPUT_EXPERIMENT,
+                                   EXPERIMENT_TYPE_THROUGHPUT,
                                    logging_type,
+                                   YCSB_BENCHMARK_TYPE,
                                    client_count,
                                    ycsb_update_ratio,
                                    ycsb_skew_factor)
@@ -454,18 +488,46 @@ def ycsb_throughput_eval():
                     # COLLECT STATS
                     collect_stats(YCSB_THROUGHPUT_DIR, YCSB_THROUGHPUT_CSV, YCSB_THROUGHPUT_EXPERIMENT)
 
+# TPCC THROUGHPUT -- EVAL
+def tpcc_throughput_eval():
+
+    # CLEAN UP RESULT DIR
+    clean_up_dir(TPCC_THROUGHPUT_DIR)
+
+    tpcc_update_ratio = 0
+    tpcc_skew_factor = 1
+    
+    for logging_type in LOGGING_TYPES:
+        for client_count in CLIENT_COUNTS:
+            
+            # RUN EXPERIMENT
+            run_experiment(LOGGING,
+                           EXPERIMENT_TYPE_THROUGHPUT,
+                           logging_type,
+                           TPCC_BENCHMARK_TYPE,
+                           client_count,
+                           tpcc_update_ratio,
+                           tpcc_skew_factor)
+
+            # COLLECT STATS
+            collect_stats(TPCC_THROUGHPUT_DIR, TPCC_THROUGHPUT_CSV, TPCC_THROUGHPUT_EXPERIMENT)
+
 
 ###################################################################################
 # MAIN
 ###################################################################################
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Run Write Behind Logging Experiments')
+    parser = argparse.ArgumentParser(prog="log", 
+                                     description='Run Write Behind Logging Experiments',
+                                     formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=50))
 
     parser.add_argument("-x", "--enable-sdv", help='enable sdv', action='store_true')
-    parser.add_argument("-w", "--ycsb_throughput", help='eval ycsb_throughput', action='store_true')
+    parser.add_argument("-a", "--ycsb_throughput", help='eval ycsb_throughput', action='store_true')
+    parser.add_argument("-b", "--tpcc_throughput", help='eval tpcc_throughput', action='store_true')
 
-    parser.add_argument("-a", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
+    parser.add_argument("-m", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
+    parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
 
     args = parser.parse_args()
 
@@ -478,9 +540,16 @@ if __name__ == '__main__':
     if args.ycsb_throughput:
         ycsb_throughput_eval()
 
+    if args.tpcc_throughput:
+        tpcc_throughput_eval()
+
+
     ## PLOT
 
     if args.ycsb_throughput_plot:
         ycsb_throughput_plot()
 
-    create_legend_logging_types()
+    if args.tpcc_throughput_plot:
+        tpcc_throughput_plot()
+
+    #create_legend_logging_types()
