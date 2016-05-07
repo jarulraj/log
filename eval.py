@@ -90,8 +90,6 @@ BAR_LINEWIDTH = 1.2
 matplotlib.rcParams['ps.useafm'] = True
 matplotlib.rcParams['font.family'] = OPT_FONT_NAME
 matplotlib.rcParams['pdf.use14corefonts'] = True
-#matplotlib.rcParams['text.usetex'] = True
-#matplotlib.rcParams['text.latex.preamble']=[r'\usepackage{euler}']
 
 LABEL_FP = FontProperties(style='normal', size=LABEL_FONT_SIZE, weight='bold')
 TICK_FP = FontProperties(style='normal', size=TICK_FONT_SIZE)
@@ -113,43 +111,34 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 PELOTON_BUILD_DIR = BASE_DIR + "/../peloton/build"
 LOGGING = PELOTON_BUILD_DIR + "/src/.libs/logger"
 
-OUTPUT_FILE = "outputfile.summary"
-
-WORKLOAD_DIR = BASE_DIR + "/results/workload/"
-RECOVERY_DIR = BASE_DIR + "/results/recovery/"
-STORAGE_DIR = BASE_DIR + "/results/storage/"
-WAIT_DIR = BASE_DIR + "/results/wait/"
-
-WORKLOAD_COUNT = (10, 20, 50, 100)
-COLUMN_COUNTS = (5, 50)
-WAIT_TIMEOUTS = (10, 100, 1000, 10000, 100000)
-
-SCALE_FACTOR = 1
-BACKEND_COUNT = 1
-
-# Refer LoggingType in common/types.h
-LOGGING_TYPES = (10, 11,
-                 20, 21,
-                 30, 31)
-
-LOGGING_NAMES = ("DRAM_NVM", "DRAM_HDD",
-                 "NVM_NVM", "NVM_HDD",
-                 "HDD_NVM", "HDD_HDD")
-
-WORKLOAD_EXPERIMENT = 1
-RECOVERY_EXPERIMENT = 2
-STORAGE_EXPERIMENT = 3
-WAIT_EXPERIMENT = 4
-
 SDV_DIR = "/data/devel/sdv-tools/sdv-release"
 SDV_SCRIPT = SDV_DIR + "/ivt_pm_sdv.sh"
 NVM_LATENCIES = ("160", "320")
 DEFAULT_NVM_LATENCY = NVM_LATENCIES[0]
 ENABLE_SDV = False
 
-DATA_FILE_SIZE = 512
+OUTPUT_FILE = "outputfile.summary"
 
-UPDATE_RATIOS = (0, 0.5)
+# Refer LoggingType in common/types.h
+LOGGING_TYPES = (0, 1, 2, 3, 4)
+
+LOGGING_NAMES = ("disabled", 
+                 "nvm_wal", "nvm_wbl", 
+                 "hdd_wal", "hdd_wbl")
+
+SCALE_FACTOR = 1
+DATABASE_FILE_SIZE = 4096  # DATABASE FILE SIZE (MB)
+
+TRANSACTION_COUNT = 100
+
+CLIENT_COUNTS = (10, 20, 50, 100)
+
+YCSB_UPDATE_RATIOS = (0, 0.5)
+YCSB_UPDATE_NAMES = ("read_only", "balanced")
+
+YCSB_WORKLOAD_DIR = BASE_DIR + "/results/workload/ycsb/"
+YCSB_WORKLOAD_EXPERIMENT = 1
+YCSB_WORKLOAD_CSV = "ycsb_workload.csv"
 
 ###################################################################################
 # UTILS
@@ -205,6 +194,22 @@ def saveGraph(fig, output, width, height):
     pp.close()
     LOG.info("OUTPUT: %s", output)
 
+# Figure out ycsb update name
+def getYCSBUpdateName(ycsb_update_ratio):
+
+    ycsb_update_ratio_type_offset = YCSB_UPDATE_RATIOS.index(float(ycsb_update_ratio))
+    ycsb_update_name = YCSB_UPDATE_NAMES[ycsb_update_ratio_type_offset]
+
+    return ycsb_update_name
+
+# Figure out logging name
+def getLoggingName(logging_type):
+    
+    logging_type_offset = LOGGING_TYPES.index(int(logging_type))
+    logging_name = LOGGING_NAMES[logging_type_offset]
+
+    return logging_name
+
 ###################################################################################
 # PLOT
 ###################################################################################
@@ -239,14 +244,14 @@ def create_legend():
 
     figlegend.savefig('legend.pdf')
 
-def create_workload_bar_chart(datasets):
+def create_ycsb_workload_bar_chart(datasets):
     fig = plot.figure()
     ax1 = fig.add_subplot(111)
 
     # X-AXIS
-    x_values = np.arange(len(UPDATE_RATIOS))
+    x_values = np.arange(len(CLIENT_COUNTS))
     N = len(x_values)
-    x_labels = [str(i) for i in UPDATE_RATIOS]
+    x_labels = [str(i) for i in CLIENT_COUNTS]
 
     M = len(LOGGING_NAMES)
     ind = np.arange(N)
@@ -271,7 +276,6 @@ def create_workload_bar_chart(datasets):
 
 
     # GRID
-    axes = ax1.get_axes()
     makeGrid(ax1)
 
     # Y-AXIS
@@ -280,7 +284,7 @@ def create_workload_bar_chart(datasets):
     ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
 
     # X-AXIS
-    ax1.set_xlabel("Update ratio", fontproperties=LABEL_FP)
+    ax1.set_xlabel("Number of Clients", fontproperties=LABEL_FP)
     ax1.set_xticks(ind + margin + (group * width)/2.0 )
     ax1.set_xticklabels(x_labels)
 
@@ -291,167 +295,35 @@ def create_workload_bar_chart(datasets):
 
     return (fig)
 
-def create_recovery_bar_chart(datasets):
-    fig = plot.figure()
-    ax1 = fig.add_subplot(111)
-
-    # X-AXIS
-    x_values = np.arange(len(TUPLE_COUNTS))
-    N = len(x_values)
-    x_labels = [str(i) for i in TUPLE_COUNTS]
-
-    M = len(LOGGING_NAMES)
-    ind = np.arange(N)
-    margin = 0.15
-    width = ((1.0 - 2 * margin) / M)
-    bars = [None] * M * N
-
-    for group in xrange(len(datasets)):
-        # GROUP
-        group_data = []
-
-        for line in  xrange(len(datasets[group])):
-            for col in  xrange(len(datasets[group][line])):
-                if col == 1:
-                    group_data.append(datasets[group][line][col])
-
-        LOG.info("group_data = %s", str(group_data))
-
-        bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
-                              color=OPT_COLORS[group],
-                              linewidth=BAR_LINEWIDTH)
-
-
-    # GRID
-    axes = ax1.get_axes()
-    makeGrid(ax1)
-
-    # Y-AXIS
-    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
-    ax1.minorticks_off()
-    ax1.set_ylabel("Execution time (ms)", fontproperties=LABEL_FP)
-
-    # X-AXIS
-    ax1.set_xlabel("Number of transactions", fontproperties=LABEL_FP)
-    ax1.set_xticks(ind + margin + (group * width)/2.0 )
-    ax1.set_xticklabels(x_labels)
-
-    for label in ax1.get_yticklabels() :
-        label.set_fontproperties(TICK_FP)
-    for label in ax1.get_xticklabels() :
-        label.set_fontproperties(TICK_FP)
-
-    return (fig)
-
-def create_storage_bar_chart(datasets):
-    fig = plot.figure()
-    ax1 = fig.add_subplot(111)
-
-    # X-AXIS
-    x_values = np.arange(len(TUPLE_COUNTS))
-    N = len(x_values)
-    x_labels = [str(i) for i in TUPLE_COUNTS]
-
-    ind = np.arange(N)
-    idx = 1
-
-    # GROUP
-    for group_index, group in enumerate(LOGGING_TYPES_SUBSET):
-        group_data = []
-
-        # LINE
-        for line_index, line in enumerate(x_values):
-            group_data.append(datasets[group_index][line_index][1])
-
-        LOG.info("%s group_data = %s ", group, str(group_data))
-
-        ax1.plot(x_values, group_data, color=OPT_LINE_COLORS[idx], linewidth=OPT_LINE_WIDTH,
-                 marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, label=str(group))
-
-        idx = idx + 1
-
-    # GRID
-    axes = ax1.get_axes()
-    makeGrid(ax1)
-
-    # Y-AXIS
-    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
-    ax1.minorticks_off()
-    ax1.set_ylabel("Log Storage Footprint (B)", fontproperties=LABEL_FP)
-    ax1.set_yscale('log', basey=10)
-
-    # X-AXIS
-    ax1.set_xlabel("Number of transactions", fontproperties=LABEL_FP)
-    plot.xticks(x_values, x_labels)
-
-    for label in ax1.get_yticklabels() :
-        label.set_fontproperties(TICK_FP)
-    for label in ax1.get_xticklabels() :
-        label.set_fontproperties(TICK_FP)
-
-    return (fig)
 
 ###################################################################################
 # PLOT HELPERS
 ###################################################################################
 
 # WORKLOAD -- PLOT
-def workload_plot():
+def ycsb_workload_plot():
 
-    datasets = []
-    
-    for logging_name in LOGGING_NAMES:
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
 
-        data_file = WORKLOAD_DIR + "/" + logging_name + "/" + "workload.csv"
+        ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
 
-        dataset = loadDataFile(len(UPDATE_RATIOS), 2, data_file)
-        datasets.append(dataset)
-
-    fig = create_workload_bar_chart(datasets)
-
-    fileName = "workload.pdf"
-
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
-
-# RECOVERY -- PLOT
-def recovery_plot():
-
-    for nvm_latency in NVM_LATENCIES:
-
-        for column_count in COLUMN_COUNTS:
-            datasets = []
-
-            for logging_name in LOGGING_NAMES_SUBSET:
-
-                data_file = RECOVERY_DIR + "/" + logging_name + "/" + str(nvm_latency) + "/" + str(column_count) + "/" + "recovery.csv"
-
-                dataset = loadDataFile(len(TUPLE_COUNTS), 2, data_file)
-                datasets.append(dataset)
-
-            fig = create_recovery_bar_chart(datasets)
-
-            fileName = "recovery-" + str(nvm_latency) + "-" + str(column_count) + ".pdf"
-
-            saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
-
-# STORAGE -- PLOT
-def storage_plot():
-
-    for column_count in COLUMN_COUNTS:
         datasets = []
+        for logging_type in LOGGING_TYPES:
 
-        for logging_name in LOGGING_NAMES_SUBSET:
-
-            data_file = STORAGE_DIR + "/" + logging_name + "/" + str(column_count) + "/" + "storage.csv"
-
-            dataset = loadDataFile(len(TUPLE_COUNTS), 2, data_file)
+            # figure out logging name and ycsb update name
+            logging_name = getLoggingName(logging_type)
+    
+            data_file = YCSB_WORKLOAD_DIR + "/" + ycsb_update_name + "/" + logging_name + "/" + YCSB_WORKLOAD_CSV
+    
+            dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
             datasets.append(dataset)
 
-        fig = create_storage_bar_chart(datasets)
-
-        fileName = "storage-" + str(column_count) + ".pdf"
-
+        fig = create_ycsb_workload_bar_chart(datasets)
+    
+        fileName = "ycsb_" + ycsb_update_name + ".pdf"
+    
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+
 
 ###################################################################################
 # EVAL HELPERS
@@ -468,7 +340,8 @@ def clean_up_dir(result_directory):
 def run_experiment(program,
                    experiment_type,
                    logging_type,
-                   update_ratio):
+                   client_count,
+                   ycsb_update_ratio):
 
     # cleanup
     subprocess.call(["rm -f " + OUTPUT_FILE], shell=True)
@@ -476,9 +349,11 @@ def run_experiment(program,
     subprocess.call([program,
                      "-e", str(experiment_type),
                      "-l", str(logging_type),
-                     "-u", str(update_ratio),
                      "-k", str(SCALE_FACTOR),
-                     "-f", str(DATA_FILE_SIZE)])
+                     "-f", str(DATABASE_FILE_SIZE),
+                     "-t", str(TRANSACTION_COUNT),
+                     "-b", str(client_count),
+                     "-u", str(ycsb_update_ratio)])
 
 
 # COLLECT STATS
@@ -495,24 +370,19 @@ def collect_stats(result_dir,
 
         # Collect info
         logging_type = data[0]
-        update_ratio = data[1]
+        ycsb_update_ratio = data[1]
         scale_factor = data[2]
         backend_count = data[3]
 
         stat = data[4]
 
-        logging_type_offset = LOGGING_TYPES.index(int(logging_type))
-        logging_name = LOGGING_NAMES[logging_type_offset]
+        # figure out logging name and ycsb update name
+        logging_name = getLoggingName(logging_type)
+        ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
 
         # MAKE RESULTS FILE DIR
-        if category == WORKLOAD_EXPERIMENT:
-            result_directory = result_dir + "/" + logging_name
-        elif category == RECOVERY_EXPERIMENT:
-            result_directory = result_dir + "/" + logging_name + "/" + str(nvm_latency)
-        elif category == STORAGE_EXPERIMENT:
-            result_directory = result_dir + "/" + logging_name + "/"
-        elif category == WAIT_EXPERIMENT:
-            result_directory = result_dir + "/" + logging_name
+        if category == YCSB_WORKLOAD_EXPERIMENT:
+            result_directory = result_dir + "/" + ycsb_update_name + "/" + logging_name
 
         if not os.path.exists(result_directory):
             os.makedirs(result_directory)
@@ -521,12 +391,8 @@ def collect_stats(result_dir,
         result_file = open(file_name, "a")
 
         # WRITE OUT STATS
-        if category == WORKLOAD_EXPERIMENT:
-            result_file.write(str(update_ratio) + " , " + str(stat) + "\n")
-        elif category == RECOVERY_EXPERIMENT or category == STORAGE_EXPERIMENT:
-            result_file.write(str(0) + " , " + str(stat) + "\n")
-        elif category == WAIT_EXPERIMENT:
-            result_file.write(str(0) + " , " + str(stat) + "\n")
+        if category == YCSB_WORKLOAD_EXPERIMENT:
+            result_file.write(str(backend_count) + " , " + str(stat) + "\n")
 
         result_file.close()
 
@@ -553,68 +419,25 @@ def reset_nvm_latency():
         FNULL.close()
 
 # WORKLOAD -- EVAL
-def workload_eval():
+def ycsb_workload_eval():
 
     # CLEAN UP RESULT DIR
-    clean_up_dir(WORKLOAD_DIR)
+    clean_up_dir(YCSB_WORKLOAD_DIR)
 
-    for logging_type in LOGGING_TYPES:
-        for update_ratio in UPDATE_RATIOS:
-
-            # RUN EXPERIMENT
-            run_experiment(LOGGING,
-                           WORKLOAD_EXPERIMENT,
-                           logging_type,
-                           update_ratio)
-
-            # COLLECT STATS
-            collect_stats(WORKLOAD_DIR, "workload.csv", WORKLOAD_EXPERIMENT)
-
-
-# RECOVERY -- EVAL
-def recovery_eval():
-
-    # CLEAN UP RESULT DIR
-    clean_up_dir(RECOVERY_DIR)
-
-    wait_timeout = 0
-
-    for nvm_latency in NVM_LATENCIES:
-        # SET NVM LATENCY
-        set_nvm_latency(nvm_latency)
-
-        for logging_type in LOGGING_TYPES_SUBSET:
-            for tuple_count in TUPLE_COUNTS:
-                for column_count in COLUMN_COUNTS:
-
-                    # RUN EXPERIMENT
-                    run_experiment(LOGGING, RECOVERY_EXPERIMENT, column_count,
-                                   tuple_count, logging_type, wait_timeout)
-
-                    # COLLECT STATS
-                    collect_stats(RECOVERY_DIR, "recovery.csv", RECOVERY_EXPERIMENT, nvm_latency)
-
-    # RESET NVM LATENCY
-    reset_nvm_latency()
-
-# STORAGE -- EVAL
-def storage_eval():
-
-    # CLEAN UP RESULT DIR
-    clean_up_dir(STORAGE_DIR)
-
-    wait_timeout = 0
-
-    for logging_type in LOGGING_TYPES_SUBSET:
-        for tuple_count in TUPLE_COUNTS:
-            for column_count in COLUMN_COUNTS:
-
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+        for logging_type in LOGGING_TYPES:
+            for client_count in CLIENT_COUNTS:
+                
                 # RUN EXPERIMENT
-                run_experiment(LOGGING, STORAGE_EXPERIMENT, column_count,
-                               tuple_count, logging_type, wait_timeout)
+                run_experiment(LOGGING,
+                               YCSB_WORKLOAD_EXPERIMENT,
+                               logging_type,
+                               client_count,
+                               ycsb_update_ratio)
 
                 # COLLECT STATS
-                collect_stats(STORAGE_DIR, "storage.csv", STORAGE_EXPERIMENT, 0)
+                collect_stats(YCSB_WORKLOAD_DIR, YCSB_WORKLOAD_CSV, YCSB_WORKLOAD_EXPERIMENT)
+
 
 ###################################################################################
 # MAIN
@@ -624,13 +447,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run Write Behind Logging Experiments')
 
     parser.add_argument("-x", "--enable-sdv", help='enable sdv', action='store_true')
-    parser.add_argument("-w", "--workload", help='eval workload', action='store_true')
-    parser.add_argument("-r", "--recovery", help='eval recovery', action='store_true')
-    parser.add_argument("-s", "--storage", help='eval storage', action='store_true')
+    parser.add_argument("-w", "--ycsb_workload", help='eval ycsb_workload', action='store_true')
 
-    parser.add_argument("-a", "--workload_plot", help='plot workload', action='store_true')
-    parser.add_argument("-b", "--recovery_plot", help='plot recovery', action='store_true')
-    parser.add_argument("-c", "--storage_plot", help='plot storage', action='store_true')
+    parser.add_argument("-a", "--ycsb_workload_plot", help='plot ycsb_workload', action='store_true')
 
     args = parser.parse_args()
 
@@ -640,24 +459,12 @@ if __name__ == '__main__':
 
     ## EVAL
 
-    if args.workload:
-        workload_eval()
-
-    if args.recovery:
-        recovery_eval()
-
-    if args.storage:
-        storage_eval()
+    if args.ycsb_workload:
+        ycsb_workload_eval()
 
     ## PLOT
 
-    if args.workload_plot:
-        workload_plot()
-
-    if args.recovery_plot:
-        recovery_plot()
-
-    if args.storage_plot:
-        storage_plot()
+    if args.ycsb_workload_plot:
+        ycsb_workload_plot()
 
     #create_legend()
