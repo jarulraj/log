@@ -146,6 +146,8 @@ INVALID_SKEW_FACTOR = 1;
 
 EXPERIMENT_TYPE_THROUGHPUT = 1
 EXPERIMENT_TYPE_RECOVERY = 2
+EXPERIMENT_TYPE_STORAGE = 3
+EXPERIMENT_TYPE_LATENCY = 4
 
 STORAGE_LOGGING_TYPES = ("WAL", "WBL")
 STORAGE_LABELS = ("Table", "Index", "Log", "Checkpoint", "Other")
@@ -171,6 +173,15 @@ YCSB_STORAGE_CSV = "ycsb_storage.csv"
 
 TPCC_STORAGE_DIR = BASE_DIR + "/results/storage/tpcc/"
 TPCC_STORAGE_CSV = "tpcc_storage.csv"
+
+YCSB_LATENCY_DIR = BASE_DIR + "/results/latency/ycsb/"
+YCSB_LATENCY_EXPERIMENT = 5
+YCSB_LATENCY_CSV = "ycsb_latency.csv"
+
+TPCC_LATENCY_DIR = BASE_DIR + "/results/latency/tpcc/"
+TPCC_LATENCY_EXPERIMENT = 6 
+TPCC_LATENCY_CSV = "tpcc_latency.csv"
+
 
 ###################################################################################
 # UTILS
@@ -460,11 +471,61 @@ def create_ycsb_storage_bar_chart(datasets):
     
     return (fig)
 
+def create_ycsb_latency_line_chart(datasets):
+    fig = plot.figure()
+    ax1 = fig.add_subplot(111)
+
+    # X-AXIS
+    x_labels = [str(i) for i in CLIENT_COUNTS]
+    N = len(x_labels)
+    ind = np.arange(N)  
+
+    idx = 0
+    for group in xrange(len(datasets)):
+        # GROUP
+        group_data = []
+
+        for line in  xrange(len(datasets[group])):
+            for col in  xrange(len(datasets[group][line])):
+                if col == 1:
+                    group_data.append(datasets[group][line][col] * 1000) # ms
+
+        LOG.info("group_data = %s", str(group_data))
+
+        ax1.plot(ind + 0.5, group_data, 
+                 color=OPT_LINE_COLORS[idx], 
+                 linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, 
+                 label=str(group))        
+
+        idx = idx + 1  
+
+
+    # GRID
+    makeGrid(ax1)
+            
+    # Y-AXIS
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
+    ax1.minorticks_off()
+    ax1.set_ylabel("Latency (ms)", fontproperties=LABEL_FP)
+
+    # X-AXIS
+    ax1.set_xticks(ind + 0.5)              
+    ax1.set_xlabel("Number of Clients", fontproperties=LABEL_FP)
+    ax1.set_xticklabels(x_labels)    
+    ax1.set_xlim([0.25, N - 0.25])
+
+    for label in ax1.get_yticklabels() :
+        label.set_fontproperties(TICK_FP)
+    for label in ax1.get_xticklabels() :
+        label.set_fontproperties(TICK_FP)
+
+    return (fig)
+
 ###################################################################################
 # PLOT HELPERS
 ###################################################################################
 
-# THROUGHPUT -- PLOT
+# YCSB THROUGHPUT -- PLOT
 def ycsb_throughput_plot():
 
     for ycsb_skew_factor in YCSB_SKEW_FACTORS:
@@ -578,6 +639,54 @@ def tpcc_storage_plot():
     
     saveGraph(fig, fileName, width=OPT_GRAPH_WIDTH/2, height=OPT_GRAPH_HEIGHT/2.0)     
 
+# YCSB LATENCY -- PLOT
+def ycsb_latency_plot():
+
+    for ycsb_skew_factor in YCSB_SKEW_FACTORS:
+
+        ycsb_skew_name = getYCSBSkewName(ycsb_skew_factor)
+
+        for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+    
+            ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+    
+            datasets = []
+            for logging_type in LOGGING_TYPES:
+    
+                # figure out logging name and ycsb update name
+                logging_name = getLoggingName(logging_type)
+        
+                data_file = YCSB_LATENCY_DIR + "/" + ycsb_skew_name + "/" + ycsb_update_name + "/" + logging_name + "/" + YCSB_LATENCY_CSV
+        
+                dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
+                datasets.append(dataset)
+    
+            fig = create_ycsb_latency_line_chart(datasets)
+        
+            fileName = "ycsb-" + "latency-" + ycsb_skew_name + "-" + ycsb_update_name + ".pdf"
+        
+            saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+
+# TPCC LATENCY -- PLOT
+def tpcc_latency_plot():
+
+    datasets = []
+    for logging_type in LOGGING_TYPES:
+
+        # figure out logging name and ycsb update name
+        logging_name = getLoggingName(logging_type)
+
+        data_file = TPCC_LATENCY_DIR + "/" + logging_name + "/" + TPCC_LATENCY_CSV
+
+        dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
+        datasets.append(dataset)
+
+    fig = create_ycsb_latency_line_chart(datasets)
+
+    fileName = "tpcc-" + "latency" + ".pdf"
+    
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+
 ###################################################################################
 # EVAL HELPERS
 ###################################################################################
@@ -641,11 +750,11 @@ def collect_stats(result_dir,
         logging_name = getLoggingName(logging_type)
 
         # MAKE RESULTS FILE DIR
-        if category == YCSB_THROUGHPUT_EXPERIMENT:
+        if category == YCSB_THROUGHPUT_EXPERIMENT or category == YCSB_LATENCY_EXPERIMENT:
             ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
             ycsb_skew_name = getYCSBSkewName(ycsb_skew_factor)
             result_directory = result_dir + "/" + ycsb_skew_name + "/" + ycsb_update_name + "/" + logging_name
-        elif category == TPCC_THROUGHPUT_EXPERIMENT:
+        elif category == TPCC_THROUGHPUT_EXPERIMENT or category == TPCC_LATENCY_EXPERIMENT:
             result_directory = result_dir + "/" + logging_name
         elif category == YCSB_RECOVERY_EXPERIMENT or category == TPCC_RECOVERY_EXPERIMENT:
             result_directory = result_dir + "/" + logging_name
@@ -657,7 +766,8 @@ def collect_stats(result_dir,
         result_file = open(file_name, "a")
 
         # WRITE OUT STATS
-        if category == YCSB_THROUGHPUT_EXPERIMENT or category == TPCC_THROUGHPUT_EXPERIMENT:
+        if category == YCSB_THROUGHPUT_EXPERIMENT or category == TPCC_THROUGHPUT_EXPERIMENT \
+         or category == YCSB_LATENCY_EXPERIMENT or category == TPCC_LATENCY_EXPERIMENT:
             result_file.write(str(backend_count) + " , " + str(stat) + "\n")
         elif category == YCSB_RECOVERY_EXPERIMENT or category == TPCC_RECOVERY_EXPERIMENT:
             result_file.write(str(transaction_count) + " , " + str(stat) + "\n")
@@ -782,6 +892,52 @@ def tpcc_recovery_eval():
                 # COLLECT STATS
                 collect_stats(TPCC_RECOVERY_DIR, TPCC_RECOVERY_CSV, TPCC_RECOVERY_EXPERIMENT)
 
+# YCSB LATENCY -- EVAL
+def ycsb_latency_eval():
+
+    # CLEAN UP RESULT DIR
+    clean_up_dir(YCSB_LATENCY_DIR)
+
+    for ycsb_skew_factor in YCSB_SKEW_FACTORS:
+        for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+            for logging_type in LOGGING_TYPES:
+                for client_count in CLIENT_COUNTS:
+                    
+                    # RUN EXPERIMENT
+                    run_experiment(LOGGING,
+                                   EXPERIMENT_TYPE_LATENCY,
+                                   logging_type,
+                                   YCSB_BENCHMARK_TYPE,
+                                   client_count,
+                                   TRANSACTION_COUNT,
+                                   ycsb_update_ratio,
+                                   ycsb_skew_factor)
+    
+                    # COLLECT STATS
+                    collect_stats(YCSB_LATENCY_DIR, YCSB_LATENCY_CSV, YCSB_LATENCY_EXPERIMENT)
+
+# TPCC LATENCY -- EVAL
+def tpcc_latency_eval():
+
+    # CLEAN UP RESULT DIR
+    clean_up_dir(TPCC_LATENCY_DIR)
+    
+    for logging_type in LOGGING_TYPES:
+        for client_count in CLIENT_COUNTS:
+            
+            # RUN EXPERIMENT
+            run_experiment(LOGGING,
+                           EXPERIMENT_TYPE_LATENCY,
+                           logging_type,
+                           TPCC_BENCHMARK_TYPE,
+                           client_count,
+                           TRANSACTION_COUNT,
+                           INVALID_UPDATE_RATIO,
+                           INVALID_SKEW_FACTOR)
+
+            # COLLECT STATS
+            collect_stats(TPCC_LATENCY_DIR, TPCC_LATENCY_CSV, TPCC_LATENCY_EXPERIMENT)
+
 ###################################################################################
 # MAIN
 ###################################################################################
@@ -796,6 +952,8 @@ if __name__ == '__main__':
     parser.add_argument("-b", "--tpcc_throughput_eval", help='eval tpcc_throughput', action='store_true')
     parser.add_argument("-c", "--ycsb_recovery_eval", help='eval ycsb_recovery', action='store_true')
     parser.add_argument("-d", "--tpcc_recovery_eval", help='eval tpcc_recovery', action='store_true')
+    parser.add_argument("-e", "--ycsb_latency_eval", help='eval ycsb_latency', action='store_true')
+    parser.add_argument("-f", "--tpcc_latency_eval", help='eval tpcc_latency', action='store_true')
 
     parser.add_argument("-m", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
     parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
@@ -803,6 +961,8 @@ if __name__ == '__main__':
     parser.add_argument("-p", "--tpcc_recovery_plot", help='plot tpcc_recovery', action='store_true')
     parser.add_argument("-q", "--ycsb_storage_plot", help='plot ycsb_storage', action='store_true')
     parser.add_argument("-r", "--tpcc_storage_plot", help='plot tpcc_storage', action='store_true')
+    parser.add_argument("-s", "--ycsb_latency_plot", help='plot ycsb_latency', action='store_true')
+    parser.add_argument("-t", "--tpcc_latency_plot", help='plot tpcc_latency', action='store_true')
 
     args = parser.parse_args()
 
@@ -824,6 +984,12 @@ if __name__ == '__main__':
     if args.tpcc_recovery_eval:
         tpcc_recovery_eval()
 
+    if args.ycsb_latency_eval:
+        ycsb_latency_eval()
+
+    if args.tpcc_latency_eval:
+        tpcc_latency_eval()
+
     ## PLOT
 
     if args.ycsb_throughput_plot:
@@ -843,6 +1009,12 @@ if __name__ == '__main__':
 
     if args.tpcc_storage_plot:
         tpcc_storage_plot()
+
+    if args.ycsb_latency_plot:
+        ycsb_latency_plot()
+
+    if args.tpcc_latency_plot:
+        tpcc_latency_plot()
 
     #create_legend_logging_types()
     create_legend_storage()
