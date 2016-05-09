@@ -151,6 +151,9 @@ INVALID_SKEW_FACTOR = 1;
 FLUSH_MODES = ("1", "2")
 DEFAULT_FLUSH_MODE = 2
 
+ASYNCHRONOUS_MODES = ("1", "2", "3")
+DEFAULT_ASYNCHRONOUS_MODE = 1
+
 EXPERIMENT_TYPE_THROUGHPUT = 1
 EXPERIMENT_TYPE_RECOVERY = 2
 EXPERIMENT_TYPE_STORAGE = 3
@@ -200,6 +203,10 @@ PCOMMIT_LATENCY_CSV = "pcommit_latency.csv"
 FLUSH_MODE_DIR = BASE_DIR + "/results/flush_mode/"
 FLUSH_MODE_EXPERIMENT = 9 
 FLUSH_MODE_CSV = "flush_mode.csv"
+
+ASYNCHRONOUS_MODE_DIR = BASE_DIR + "/results/asynchronous_mode/"
+ASYNCHRONOUS_MODE_EXPERIMENT = 10
+ASYNCHRONOUS_MODE_CSV = "asynchronous_mode.csv"
 
 ###################################################################################
 # UTILS
@@ -686,6 +693,55 @@ def create_flush_mode_bar_chart(datasets):
 
     return (fig)
 
+def create_asynchronous_mode_bar_chart(datasets):
+    fig = plot.figure()
+    ax1 = fig.add_subplot(111)
+
+    # X-AXIS
+    x_labels = [str(i) for i in ASYNCHRONOUS_MODES]
+    N = len(x_labels)
+    M = len(NVM_LOGGING_NAMES)
+    ind = np.arange(N)
+    margin = 0.15
+    width = ((1.0 - 2 * margin) / M)
+    bars = [None] * M * N
+    
+    for group in xrange(len(datasets)):
+        # GROUP
+        group_data = []
+
+        for line in  xrange(len(datasets[group])):
+            for col in  xrange(len(datasets[group][line])):
+                if col == 1:
+                    group_data.append(datasets[group][line][col])
+
+        LOG.info("group_data = %s", str(group_data))
+
+        bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
+                                      color=OPT_COLORS[group],
+                                      linewidth=BAR_LINEWIDTH)        
+
+
+    # GRID
+    makeGrid(ax1)
+            
+    # Y-AXIS
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
+    ax1.minorticks_off()
+    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+
+    # X-AXIS
+    ax1.set_xticks(ind + 0.5)              
+    ax1.set_xlabel("Asynchronous Mode", fontproperties=LABEL_FP)
+    ax1.set_xticklabels(x_labels)
+
+    for label in ax1.get_yticklabels() :
+        label.set_fontproperties(TICK_FP)
+    for label in ax1.get_xticklabels() :
+        label.set_fontproperties(TICK_FP)
+
+    return (fig)
+
 ###################################################################################
 # PLOT HELPERS
 ###################################################################################
@@ -923,6 +979,30 @@ def flush_mode_plot():
         fileName = "flush-mode-" + ycsb_update_name + ".pdf"
     
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+
+# ASYNCHRONOUS MODE -- PLOT
+def asynchronous_mode_plot():
+
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+
+        ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+
+        datasets = []
+        for nvm_logging_type in NVM_LOGGING_TYPES:
+
+            # figure out logging name and ycsb update name
+            nvm_logging_name = getLoggingName(nvm_logging_type)
+    
+            data_file = ASYNCHRONOUS_MODE_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + ASYNCHRONOUS_MODE_CSV
+    
+            dataset = loadDataFile(len(ASYNCHRONOUS_MODES), 2, data_file)
+            datasets.append(dataset)
+
+        fig = create_asynchronous_mode_bar_chart(datasets)
+    
+        fileName = "asynchronous-mode-" + ycsb_update_name + ".pdf"
+    
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
         
 ###################################################################################
 # EVAL HELPERS
@@ -946,7 +1026,8 @@ def run_experiment(program,
                    ycsb_skew_factor,
                    flush_mode,
                    nvm_latency,
-                   pcommit_latency):
+                   pcommit_latency,
+                   asynchronous_mode):
 
     # cleanup
     subprocess.call(["rm -f " + OUTPUT_FILE], shell=True)
@@ -963,7 +1044,8 @@ def run_experiment(program,
                      "-y", str(benchmark_type),
                      "-d", str(flush_mode),
                      "-n", str(nvm_latency),
-                     "-p", str(pcommit_latency)])
+                     "-p", str(pcommit_latency),
+                     "-a", str(asynchronous_mode)])
 
 
 # COLLECT STATS
@@ -986,11 +1068,12 @@ def collect_stats(result_dir,
         backend_count = data[4]
         ycsb_skew_factor = data[5]
         transaction_count = data[6]
-        nvm_latency_count = data[7]
-        pcommit_latency_count = data[8]
-        flush_mode_count = data[9]
+        nvm_latency = data[7]
+        pcommit_latency = data[8]
+        flush_mode = data[9]
+        asynchronous_mode = data[10]
 
-        stat = data[10]
+        stat = data[11]
 
         # figure out logging name and ycsb update name
         logging_name = getLoggingName(logging_type)
@@ -1004,7 +1087,8 @@ def collect_stats(result_dir,
             result_directory = result_dir + "/" + logging_name
         elif category == YCSB_RECOVERY_EXPERIMENT or category == TPCC_RECOVERY_EXPERIMENT:
             result_directory = result_dir + "/" + logging_name
-        elif category == NVM_LATENCY_EXPERIMENT or category == PCOMMIT_LATENCY_EXPERIMENT or category == FLUSH_MODE_EXPERIMENT :
+        elif category == NVM_LATENCY_EXPERIMENT or category == PCOMMIT_LATENCY_EXPERIMENT \
+         or category == FLUSH_MODE_EXPERIMENT or category == ASYNCHRONOUS_MODE_EXPERIMENT :
             ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
             result_directory = result_dir + "/" + ycsb_update_name + "/" + logging_name
 
@@ -1021,11 +1105,13 @@ def collect_stats(result_dir,
         elif category == YCSB_RECOVERY_EXPERIMENT or category == TPCC_RECOVERY_EXPERIMENT:
             result_file.write(str(transaction_count) + " , " + str(stat) + "\n")
         elif category == NVM_LATENCY_EXPERIMENT:
-            result_file.write(str(nvm_latency_count) + " , " + str(stat) + "\n")
+            result_file.write(str(nvm_latency) + " , " + str(stat) + "\n")
         elif category == PCOMMIT_LATENCY_EXPERIMENT:
-            result_file.write(str(pcommit_latency_count) + " , " + str(stat) + "\n")
+            result_file.write(str(pcommit_latency) + " , " + str(stat) + "\n")
         elif category == FLUSH_MODE_EXPERIMENT:
-            result_file.write(str(flush_mode_count) + " , " + str(stat) + "\n")
+            result_file.write(str(flush_mode) + " , " + str(stat) + "\n")
+        elif category == ASYNCHRONOUS_MODE_EXPERIMENT:
+            result_file.write(str(asynchronous_mode) + " , " + str(stat) + "\n")
 
         result_file.close()
 
@@ -1073,7 +1159,8 @@ def ycsb_throughput_eval():
                                    ycsb_skew_factor,
                                    DEFAULT_FLUSH_MODE,
                                    INVALID_NVM_LATENCY,
-                                   INVALID_PCOMMIT_LATENCY)
+                                   INVALID_PCOMMIT_LATENCY,
+                                   DEFAULT_ASYNCHRONOUS_MODE)
     
                     # COLLECT STATS
                     collect_stats(YCSB_THROUGHPUT_DIR, YCSB_THROUGHPUT_CSV, YCSB_THROUGHPUT_EXPERIMENT)
@@ -1098,7 +1185,8 @@ def tpcc_throughput_eval():
                            INVALID_SKEW_FACTOR,
                            DEFAULT_FLUSH_MODE,
                            INVALID_NVM_LATENCY,
-                           INVALID_PCOMMIT_LATENCY)
+                           INVALID_PCOMMIT_LATENCY,
+                           DEFAULT_ASYNCHRONOUS_MODE)
 
             # COLLECT STATS
             collect_stats(TPCC_THROUGHPUT_DIR, TPCC_THROUGHPUT_CSV, TPCC_THROUGHPUT_EXPERIMENT)
@@ -1127,7 +1215,8 @@ def ycsb_recovery_eval():
                                ycsb_recovery_skew_factor,
                                DEFAULT_FLUSH_MODE,
                                INVALID_NVM_LATENCY,
-                               INVALID_PCOMMIT_LATENCY)
+                               INVALID_PCOMMIT_LATENCY,
+                               DEFAULT_ASYNCHRONOUS_MODE)
 
                 # COLLECT STATS
                 collect_stats(YCSB_RECOVERY_DIR, YCSB_RECOVERY_CSV, YCSB_RECOVERY_EXPERIMENT)
@@ -1154,7 +1243,8 @@ def tpcc_recovery_eval():
                                INVALID_SKEW_FACTOR,
                                DEFAULT_FLUSH_MODE,
                                INVALID_NVM_LATENCY,
-                               INVALID_PCOMMIT_LATENCY)
+                               INVALID_PCOMMIT_LATENCY,
+                               DEFAULT_ASYNCHRONOUS_MODE)
 
                 # COLLECT STATS
                 collect_stats(TPCC_RECOVERY_DIR, TPCC_RECOVERY_CSV, TPCC_RECOVERY_EXPERIMENT)
@@ -1181,7 +1271,8 @@ def ycsb_latency_eval():
                                    ycsb_skew_factor,
                                    DEFAULT_FLUSH_MODE,
                                    INVALID_NVM_LATENCY,
-                                   INVALID_PCOMMIT_LATENCY)
+                                   INVALID_PCOMMIT_LATENCY,
+                                   DEFAULT_ASYNCHRONOUS_MODE)
     
                     # COLLECT STATS
                     collect_stats(YCSB_LATENCY_DIR, YCSB_LATENCY_CSV, YCSB_LATENCY_EXPERIMENT)
@@ -1206,7 +1297,8 @@ def tpcc_latency_eval():
                            INVALID_SKEW_FACTOR,
                            DEFAULT_FLUSH_MODE,
                            INVALID_NVM_LATENCY,
-                           INVALID_PCOMMIT_LATENCY)
+                           INVALID_PCOMMIT_LATENCY,
+                           DEFAULT_ASYNCHRONOUS_MODE)
 
             # COLLECT STATS
             collect_stats(TPCC_LATENCY_DIR, TPCC_LATENCY_CSV, TPCC_LATENCY_EXPERIMENT)
@@ -1232,7 +1324,8 @@ def nvm_latency_eval():
                                DEFAULT_SKEW_FACTOR,
                                DEFAULT_FLUSH_MODE,
                                nvm_latency,
-                               INVALID_PCOMMIT_LATENCY)
+                               INVALID_PCOMMIT_LATENCY,
+                               DEFAULT_ASYNCHRONOUS_MODE)
 
                 # COLLECT STATS
                 collect_stats(NVM_LATENCY_DIR, NVM_LATENCY_CSV, NVM_LATENCY_EXPERIMENT)
@@ -1258,7 +1351,8 @@ def pcommit_latency_eval():
                                DEFAULT_SKEW_FACTOR,
                                DEFAULT_FLUSH_MODE,
                                INVALID_NVM_LATENCY,
-                               pcommit_latency)
+                               pcommit_latency,
+                               DEFAULT_ASYNCHRONOUS_MODE)
 
                 # COLLECT STATS
                 collect_stats(PCOMMIT_LATENCY_DIR, PCOMMIT_LATENCY_CSV, PCOMMIT_LATENCY_EXPERIMENT)
@@ -1284,10 +1378,39 @@ def flush_mode_eval():
                                DEFAULT_SKEW_FACTOR,
                                flush_mode,
                                INVALID_NVM_LATENCY,
-                               INVALID_PCOMMIT_LATENCY)
+                               INVALID_PCOMMIT_LATENCY,
+                               DEFAULT_ASYNCHRONOUS_MODE)
 
                 # COLLECT STATS
                 collect_stats(FLUSH_MODE_DIR, FLUSH_MODE_CSV, FLUSH_MODE_EXPERIMENT)
+
+
+# ASYNCHRONOUS MODE -- EVAL
+def asynchronous_mode_eval():
+
+    # CLEAN UP RESULT DIR
+    clean_up_dir(ASYNCHRONOUS_MODE_DIR)
+
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+        for nvm_logging_type in NVM_LOGGING_TYPES:
+            for asynchronous_mode in ASYNCHRONOUS_MODES:
+                
+                # RUN EXPERIMENT
+                run_experiment(LOGGING,
+                               EXPERIMENT_TYPE_THROUGHPUT,
+                               nvm_logging_type,
+                               YCSB_BENCHMARK_TYPE,
+                               DEFAULT_CLIENT_COUNT,
+                               TRANSACTION_COUNT,
+                               ycsb_update_ratio,
+                               DEFAULT_SKEW_FACTOR,
+                               DEFAULT_FLUSH_MODE,
+                               INVALID_NVM_LATENCY,
+                               INVALID_PCOMMIT_LATENCY,
+                               asynchronous_mode)
+
+                # COLLECT STATS
+                collect_stats(ASYNCHRONOUS_MODE_DIR, ASYNCHRONOUS_MODE_CSV, ASYNCHRONOUS_MODE_EXPERIMENT)
 
 ###################################################################################
 # MAIN
@@ -1298,7 +1421,8 @@ if __name__ == '__main__':
                                      description='Run Write Behind Logging Experiments',
                                      formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=50))
 
-    parser.add_argument("-x", "--enable-sdv", help='enable sdv', action='store_true')
+    parser.add_argument("-z", "--enable-sdv", help='enable sdv', action='store_true')
+    
     parser.add_argument("-a", "--ycsb_throughput_eval", help='eval ycsb_throughput', action='store_true')
     parser.add_argument("-b", "--tpcc_throughput_eval", help='eval tpcc_throughput', action='store_true')
     parser.add_argument("-c", "--ycsb_recovery_eval", help='eval ycsb_recovery', action='store_true')
@@ -1308,6 +1432,7 @@ if __name__ == '__main__':
     parser.add_argument("-g", "--nvm_latency_eval", help='eval nvm_latency', action='store_true')
     parser.add_argument("-i", "--pcommit_latency_eval", help='eval pcommit_latency', action='store_true')
     parser.add_argument("-j", "--flush_mode_eval", help='eval flush_mode', action='store_true')
+    parser.add_argument("-k", "--asynchronous_mode_eval", help='eval asynchronous_mode', action='store_true')
 
     parser.add_argument("-m", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
     parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
@@ -1320,6 +1445,7 @@ if __name__ == '__main__':
     parser.add_argument("-u", "--nvm_latency_plot", help='plot nvm_latency', action='store_true')
     parser.add_argument("-v", "--pcommit_latency_plot", help='plot pcommit_latency', action='store_true')
     parser.add_argument("-w", "--flush_mode_plot", help='plot flush_mode', action='store_true')
+    parser.add_argument("-x", "--asynchronous_mode_plot", help='plot asynchronous_mode', action='store_true')
 
     args = parser.parse_args()
 
@@ -1356,6 +1482,8 @@ if __name__ == '__main__':
     if args.flush_mode_eval:
         flush_mode_eval()
 
+    if args.asynchronous_mode_eval:
+        asynchronous_mode_eval()
 
     ## PLOT
 
@@ -1391,6 +1519,9 @@ if __name__ == '__main__':
 
     if args.flush_mode_plot:
         flush_mode_plot()
+
+    if args.asynchronous_mode_plot:
+        asynchronous_mode_plot()
 
     #create_legend_logging_types()
     #create_legend_storage()
