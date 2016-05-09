@@ -110,6 +110,7 @@ SDV_DIR = "/data/devel/sdv-tools/sdv-release"
 SDV_SCRIPT = SDV_DIR + "/ivt_pm_sdv.sh"
 NVM_LATENCIES = ("160", "320")
 DEFAULT_NVM_LATENCY = NVM_LATENCIES[0]
+INVALID_NVM_LATENCY = 0
 ENABLE_SDV = False
 
 OUTPUT_FILE = "outputfile.summary"
@@ -143,6 +144,9 @@ YCSB_SKEW_NAMES = ("low-skew", "high-skew")
 
 INVALID_UPDATE_RATIO = 0
 INVALID_SKEW_FACTOR = 1;
+
+DEFAULT_FLUSH_MODE = 2
+INVALID_PCOMMIT_LATENCY = 0
 
 EXPERIMENT_TYPE_THROUGHPUT = 1
 EXPERIMENT_TYPE_RECOVERY = 2
@@ -706,7 +710,10 @@ def run_experiment(program,
                    client_count,
                    transaction_count,
                    ycsb_update_ratio,
-                   ycsb_skew_factor):
+                   ycsb_skew_factor,
+                   flush_mode,
+                   nvm_latency,
+                   pcommit_latency):
 
     # cleanup
     subprocess.call(["rm -f " + OUTPUT_FILE], shell=True)
@@ -720,7 +727,10 @@ def run_experiment(program,
                      "-b", str(client_count),
                      "-u", str(ycsb_update_ratio),
                      "-s", str(ycsb_skew_factor),
-                     "-y", str(benchmark_type)])
+                     "-y", str(benchmark_type),
+                     "-d", str(flush_mode),
+                     "-n", str(nvm_latency),
+                     "-p", str(pcommit_latency)])
 
 
 # COLLECT STATS
@@ -815,7 +825,10 @@ def ycsb_throughput_eval():
                                    client_count,
                                    TRANSACTION_COUNT,
                                    ycsb_update_ratio,
-                                   ycsb_skew_factor)
+                                   ycsb_skew_factor,
+                                   DEFAULT_FLUSH_MODE,
+                                   INVALID_NVM_LATENCY,
+                                   INVALID_PCOMMIT_LATENCY)
     
                     # COLLECT STATS
                     collect_stats(YCSB_THROUGHPUT_DIR, YCSB_THROUGHPUT_CSV, YCSB_THROUGHPUT_EXPERIMENT)
@@ -837,7 +850,10 @@ def tpcc_throughput_eval():
                            client_count,
                            TRANSACTION_COUNT,
                            INVALID_UPDATE_RATIO,
-                           INVALID_SKEW_FACTOR)
+                           INVALID_SKEW_FACTOR,
+                           DEFAULT_FLUSH_MODE,
+                           INVALID_NVM_LATENCY,
+                           INVALID_PCOMMIT_LATENCY)
 
             # COLLECT STATS
             collect_stats(TPCC_THROUGHPUT_DIR, TPCC_THROUGHPUT_CSV, TPCC_THROUGHPUT_EXPERIMENT)
@@ -863,7 +879,10 @@ def ycsb_recovery_eval():
                                client_count,
                                recovery_transaction_count,
                                ycsb_recovery_update_ratio,
-                               ycsb_recovery_skew_factor)
+                               ycsb_recovery_skew_factor,
+                               DEFAULT_FLUSH_MODE,
+                               INVALID_NVM_LATENCY,
+                               INVALID_PCOMMIT_LATENCY)
 
                 # COLLECT STATS
                 collect_stats(YCSB_RECOVERY_DIR, YCSB_RECOVERY_CSV, YCSB_RECOVERY_EXPERIMENT)
@@ -887,7 +906,10 @@ def tpcc_recovery_eval():
                                client_count,
                                recovery_transaction_count,
                                INVALID_UPDATE_RATIO,
-                               INVALID_SKEW_FACTOR)
+                               INVALID_SKEW_FACTOR,
+                               DEFAULT_FLUSH_MODE,
+                               INVALID_NVM_LATENCY,
+                               INVALID_PCOMMIT_LATENCY)
 
                 # COLLECT STATS
                 collect_stats(TPCC_RECOVERY_DIR, TPCC_RECOVERY_CSV, TPCC_RECOVERY_EXPERIMENT)
@@ -911,7 +933,10 @@ def ycsb_latency_eval():
                                    client_count,
                                    TRANSACTION_COUNT,
                                    ycsb_update_ratio,
-                                   ycsb_skew_factor)
+                                   ycsb_skew_factor,
+                                   DEFAULT_FLUSH_MODE,
+                                   INVALID_NVM_LATENCY,
+                                   INVALID_PCOMMIT_LATENCY)
     
                     # COLLECT STATS
                     collect_stats(YCSB_LATENCY_DIR, YCSB_LATENCY_CSV, YCSB_LATENCY_EXPERIMENT)
@@ -933,7 +958,10 @@ def tpcc_latency_eval():
                            client_count,
                            TRANSACTION_COUNT,
                            INVALID_UPDATE_RATIO,
-                           INVALID_SKEW_FACTOR)
+                           INVALID_SKEW_FACTOR,
+                           DEFAULT_FLUSH_MODE,
+                           INVALID_NVM_LATENCY,
+                           INVALID_PCOMMIT_LATENCY)
 
             # COLLECT STATS
             collect_stats(TPCC_LATENCY_DIR, TPCC_LATENCY_CSV, TPCC_LATENCY_EXPERIMENT)
