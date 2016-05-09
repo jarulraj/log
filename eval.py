@@ -108,21 +108,23 @@ LOGGING = PELOTON_BUILD_DIR + "/src/.libs/logger"
 
 SDV_DIR = "/data/devel/sdv-tools/sdv-release"
 SDV_SCRIPT = SDV_DIR + "/ivt_pm_sdv.sh"
+ENABLE_SDV = False
+
 NVM_LATENCIES = ("160", "320")
 DEFAULT_NVM_LATENCY = NVM_LATENCIES[0]
 INVALID_NVM_LATENCY = 0
-ENABLE_SDV = False
+
+PCOMMIT_LATENCIES = ("10", "20")
+INVALID_PCOMMIT_LATENCY = 0
 
 OUTPUT_FILE = "outputfile.summary"
 
 # Refer LoggingType in common/types.h
-LOGGING_TYPES = (0, 1, 2, 3, 4)
-RECOVERY_LOGGING_TYPES = LOGGING_TYPES[1:]
+LOGGING_TYPES = (1, 2, 3, 4)
+LOGGING_NAMES = ("nvm_wal", "nvm_wbl", "hdd_wal", "hdd_wbl")
 
-LOGGING_NAMES = ("disabled", 
-                 "nvm_wal", "nvm_wbl", 
-                 "hdd_wal", "hdd_wbl")
-RECOVERY_LOGGING_NAMES = LOGGING_NAMES[1:]
+NVM_LOGGING_TYPES = LOGGING_TYPES[:2]
+NVM_LOGGING_NAMES = LOGGING_NAMES[:2]
 
 SCALE_FACTOR = 1
 DATABASE_FILE_SIZE = 4096  # DATABASE FILE SIZE (MB)
@@ -130,6 +132,7 @@ DATABASE_FILE_SIZE = 4096  # DATABASE FILE SIZE (MB)
 TRANSACTION_COUNT = 10
 
 CLIENT_COUNTS = (1, 2, 4, 8)
+DEFAULT_CLIENT_COUNT = 2
 
 YCSB_BENCHMARK_TYPE = 1
 TPCC_BENCHMARK_TYPE = 2
@@ -138,15 +141,15 @@ RECOVERY_TRANSACTION_COUNTS = (1, 3, 5)
 
 YCSB_UPDATE_RATIOS = (0, 0.1, 0.5, 0.9)
 YCSB_UPDATE_NAMES = ("read-only", "read-heavy", "balanced", "write-heavy")
+INVALID_UPDATE_RATIO = 0
 
 YCSB_SKEW_FACTORS = (1, 2)
 YCSB_SKEW_NAMES = ("low-skew", "high-skew")
-
-INVALID_UPDATE_RATIO = 0
+DEFAULT_SKEW_FACTOR = YCSB_SKEW_FACTORS[0]
 INVALID_SKEW_FACTOR = 1;
 
+FLUSH_MODES = ("1", "2")
 DEFAULT_FLUSH_MODE = 2
-INVALID_PCOMMIT_LATENCY = 0
 
 EXPERIMENT_TYPE_THROUGHPUT = 1
 EXPERIMENT_TYPE_RECOVERY = 2
@@ -186,6 +189,17 @@ TPCC_LATENCY_DIR = BASE_DIR + "/results/latency/tpcc/"
 TPCC_LATENCY_EXPERIMENT = 6 
 TPCC_LATENCY_CSV = "tpcc_latency.csv"
 
+NVM_LATENCY_DIR = BASE_DIR + "/results/nvm_latency/"
+NVM_LATENCY_EXPERIMENT = 7
+NVM_LATENCY_CSV = "nvm_latency.csv"
+
+PCOMMIT_LATENCY_DIR = BASE_DIR + "/results/pcommit_latency/"
+PCOMMIT_LATENCY_EXPERIMENT = 8 
+PCOMMIT_LATENCY_CSV = "pcommit_latency.csv"
+
+FLUSH_MODE_DIR = BASE_DIR + "/results/flush_mode/"
+FLUSH_MODE_EXPERIMENT = 9 
+FLUSH_MODE_CSV = "flush_mode.csv"
 
 ###################################################################################
 # UTILS
@@ -385,7 +399,7 @@ def create_ycsb_recovery_bar_chart(datasets):
     # X-AXIS
     x_labels = [str(i) for i in RECOVERY_TRANSACTION_COUNTS]
     N = len(x_labels)
-    M = len(RECOVERY_LOGGING_NAMES)
+    M = len(LOGGING_NAMES)
     ind = np.arange(N)
     margin = 0.15
     width = ((1.0 - 2 * margin) / M)
@@ -525,6 +539,153 @@ def create_ycsb_latency_line_chart(datasets):
 
     return (fig)
 
+def create_nvm_latency_bar_chart(datasets):
+    fig = plot.figure()
+    ax1 = fig.add_subplot(111)
+
+    # X-AXIS
+    x_labels = [str(i) for i in NVM_LATENCIES]
+    N = len(x_labels)
+    M = len(NVM_LOGGING_NAMES)
+    ind = np.arange(N)
+    margin = 0.15
+    width = ((1.0 - 2 * margin) / M)
+    bars = [None] * M * N
+    
+    for group in xrange(len(datasets)):
+        # GROUP
+        group_data = []
+
+        for line in  xrange(len(datasets[group])):
+            for col in  xrange(len(datasets[group][line])):
+                if col == 1:
+                    group_data.append(datasets[group][line][col])
+
+        LOG.info("group_data = %s", str(group_data))
+
+        bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
+                                      color=OPT_COLORS[group],
+                                      linewidth=BAR_LINEWIDTH)        
+
+
+    # GRID
+    makeGrid(ax1)
+            
+    # Y-AXIS
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
+    ax1.minorticks_off()
+    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+
+    # X-AXIS
+    ax1.set_xticks(ind + 0.5)              
+    ax1.set_xlabel("NVM Latency", fontproperties=LABEL_FP)
+    ax1.set_xticklabels(x_labels)
+
+    for label in ax1.get_yticklabels() :
+        label.set_fontproperties(TICK_FP)
+    for label in ax1.get_xticklabels() :
+        label.set_fontproperties(TICK_FP)
+
+    return (fig)
+
+def create_pcommit_latency_bar_chart(datasets):
+    fig = plot.figure()
+    ax1 = fig.add_subplot(111)
+
+    # X-AXIS
+    x_labels = [str(i) for i in PCOMMIT_LATENCIES]
+    N = len(x_labels)
+    M = len(NVM_LOGGING_NAMES)
+    ind = np.arange(N)
+    margin = 0.15
+    width = ((1.0 - 2 * margin) / M)
+    bars = [None] * M * N
+    
+    for group in xrange(len(datasets)):
+        # GROUP
+        group_data = []
+
+        for line in  xrange(len(datasets[group])):
+            for col in  xrange(len(datasets[group][line])):
+                if col == 1:
+                    group_data.append(datasets[group][line][col])
+
+        LOG.info("group_data = %s", str(group_data))
+
+        bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
+                                      color=OPT_COLORS[group],
+                                      linewidth=BAR_LINEWIDTH)        
+
+
+    # GRID
+    makeGrid(ax1)
+            
+    # Y-AXIS
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
+    ax1.minorticks_off()
+    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+
+    # X-AXIS
+    ax1.set_xticks(ind + 0.5)              
+    ax1.set_xlabel("PCOMMIT Latency", fontproperties=LABEL_FP)
+    ax1.set_xticklabels(x_labels)
+
+    for label in ax1.get_yticklabels() :
+        label.set_fontproperties(TICK_FP)
+    for label in ax1.get_xticklabels() :
+        label.set_fontproperties(TICK_FP)
+
+    return (fig)
+
+def create_flush_mode_bar_chart(datasets):
+    fig = plot.figure()
+    ax1 = fig.add_subplot(111)
+
+    # X-AXIS
+    x_labels = [str(i) for i in FLUSH_MODES]
+    N = len(x_labels)
+    M = len(NVM_LOGGING_NAMES)
+    ind = np.arange(N)
+    margin = 0.15
+    width = ((1.0 - 2 * margin) / M)
+    bars = [None] * M * N
+    
+    for group in xrange(len(datasets)):
+        # GROUP
+        group_data = []
+
+        for line in  xrange(len(datasets[group])):
+            for col in  xrange(len(datasets[group][line])):
+                if col == 1:
+                    group_data.append(datasets[group][line][col])
+
+        LOG.info("group_data = %s", str(group_data))
+
+        bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
+                                      color=OPT_COLORS[group],
+                                      linewidth=BAR_LINEWIDTH)        
+
+
+    # GRID
+    makeGrid(ax1)
+            
+    # Y-AXIS
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
+    ax1.minorticks_off()
+    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+
+    # X-AXIS
+    ax1.set_xticks(ind + 0.5)              
+    ax1.set_xlabel("Flush Mode", fontproperties=LABEL_FP)
+    ax1.set_xticklabels(x_labels)
+
+    for label in ax1.get_yticklabels() :
+        label.set_fontproperties(TICK_FP)
+    for label in ax1.get_xticklabels() :
+        label.set_fontproperties(TICK_FP)
+
+    return (fig)
+
 ###################################################################################
 # PLOT HELPERS
 ###################################################################################
@@ -581,7 +742,7 @@ def tpcc_throughput_plot():
 def ycsb_recovery_plot():
 
     datasets = []
-    for logging_type in RECOVERY_LOGGING_TYPES:
+    for logging_type in LOGGING_TYPES:
 
         # figure out logging name and ycsb update name
         logging_name = getLoggingName(logging_type)
@@ -601,7 +762,7 @@ def ycsb_recovery_plot():
 def tpcc_recovery_plot():
 
     datasets = []
-    for logging_type in RECOVERY_LOGGING_TYPES:
+    for logging_type in LOGGING_TYPES:
 
         # figure out logging name and ycsb update name
         logging_name = getLoggingName(logging_type)
@@ -691,6 +852,78 @@ def tpcc_latency_plot():
     
     saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
 
+# NVM LATENCY -- PLOT
+def nvm_latency_plot():
+
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+
+        ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+
+        datasets = []
+        for nvm_logging_type in NVM_LOGGING_TYPES:
+
+            # figure out logging name and ycsb update name
+            nvm_logging_name = getLoggingName(nvm_logging_type)
+    
+            data_file = NVM_LATENCY_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + NVM_LATENCY_CSV
+    
+            dataset = loadDataFile(len(NVM_LATENCIES), 2, data_file)
+            datasets.append(dataset)
+
+        fig = create_nvm_latency_bar_chart(datasets)
+    
+        fileName = "nvm-latency-" + ycsb_update_name + ".pdf"
+    
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+
+# PCOMMIT LATENCY -- PLOT
+def pcommit_latency_plot():
+
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+
+        ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+
+        datasets = []
+        for nvm_logging_type in NVM_LOGGING_TYPES:
+
+            # figure out logging name and ycsb update name
+            nvm_logging_name = getLoggingName(nvm_logging_type)
+    
+            data_file = PCOMMIT_LATENCY_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + PCOMMIT_LATENCY_CSV
+    
+            dataset = loadDataFile(len(PCOMMIT_LATENCIES), 2, data_file)
+            datasets.append(dataset)
+
+        fig = create_pcommit_latency_bar_chart(datasets)
+    
+        fileName = "pcommit-latency-" + ycsb_update_name + ".pdf"
+    
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+                
+# FLUSH MODE -- PLOT
+def flush_mode_plot():
+
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+
+        ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+
+        datasets = []
+        for nvm_logging_type in NVM_LOGGING_TYPES:
+
+            # figure out logging name and ycsb update name
+            nvm_logging_name = getLoggingName(nvm_logging_type)
+    
+            data_file = FLUSH_MODE_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + FLUSH_MODE_CSV
+    
+            dataset = loadDataFile(len(FLUSH_MODES), 2, data_file)
+            datasets.append(dataset)
+
+        fig = create_flush_mode_bar_chart(datasets)
+    
+        fileName = "flush-mode-" + ycsb_update_name + ".pdf"
+    
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+        
 ###################################################################################
 # EVAL HELPERS
 ###################################################################################
@@ -753,8 +986,11 @@ def collect_stats(result_dir,
         backend_count = data[4]
         ycsb_skew_factor = data[5]
         transaction_count = data[6]
+        nvm_latency_count = data[7]
+        pcommit_latency_count = data[8]
+        flush_mode_count = data[9]
 
-        stat = data[7]
+        stat = data[10]
 
         # figure out logging name and ycsb update name
         logging_name = getLoggingName(logging_type)
@@ -768,6 +1004,9 @@ def collect_stats(result_dir,
             result_directory = result_dir + "/" + logging_name
         elif category == YCSB_RECOVERY_EXPERIMENT or category == TPCC_RECOVERY_EXPERIMENT:
             result_directory = result_dir + "/" + logging_name
+        elif category == NVM_LATENCY_EXPERIMENT or category == PCOMMIT_LATENCY_EXPERIMENT or category == FLUSH_MODE_EXPERIMENT :
+            ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+            result_directory = result_dir + "/" + ycsb_update_name + "/" + logging_name
 
         if not os.path.exists(result_directory):
             os.makedirs(result_directory)
@@ -781,6 +1020,12 @@ def collect_stats(result_dir,
             result_file.write(str(backend_count) + " , " + str(stat) + "\n")
         elif category == YCSB_RECOVERY_EXPERIMENT or category == TPCC_RECOVERY_EXPERIMENT:
             result_file.write(str(transaction_count) + " , " + str(stat) + "\n")
+        elif category == NVM_LATENCY_EXPERIMENT:
+            result_file.write(str(nvm_latency_count) + " , " + str(stat) + "\n")
+        elif category == PCOMMIT_LATENCY_EXPERIMENT:
+            result_file.write(str(pcommit_latency_count) + " , " + str(stat) + "\n")
+        elif category == FLUSH_MODE_EXPERIMENT:
+            result_file.write(str(flush_mode_count) + " , " + str(stat) + "\n")
 
         result_file.close()
 
@@ -966,6 +1211,84 @@ def tpcc_latency_eval():
             # COLLECT STATS
             collect_stats(TPCC_LATENCY_DIR, TPCC_LATENCY_CSV, TPCC_LATENCY_EXPERIMENT)
 
+# NVM LATENCY -- EVAL
+def nvm_latency_eval():
+
+    # CLEAN UP RESULT DIR
+    clean_up_dir(NVM_LATENCY_DIR)
+
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+        for nvm_logging_type in NVM_LOGGING_TYPES:
+            for nvm_latency in NVM_LATENCIES:
+                
+                # RUN EXPERIMENT
+                run_experiment(LOGGING,
+                               EXPERIMENT_TYPE_THROUGHPUT,
+                               nvm_logging_type,
+                               YCSB_BENCHMARK_TYPE,
+                               DEFAULT_CLIENT_COUNT,
+                               TRANSACTION_COUNT,
+                               ycsb_update_ratio,
+                               DEFAULT_SKEW_FACTOR,
+                               DEFAULT_FLUSH_MODE,
+                               nvm_latency,
+                               INVALID_PCOMMIT_LATENCY)
+
+                # COLLECT STATS
+                collect_stats(NVM_LATENCY_DIR, NVM_LATENCY_CSV, NVM_LATENCY_EXPERIMENT)
+
+# PCOMMIT LATENCY -- EVAL
+def pcommit_latency_eval():
+
+    # CLEAN UP RESULT DIR
+    clean_up_dir(PCOMMIT_LATENCY_DIR)
+
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+        for nvm_logging_type in NVM_LOGGING_TYPES:
+            for pcommit_latency in PCOMMIT_LATENCIES:
+                
+                # RUN EXPERIMENT
+                run_experiment(LOGGING,
+                               EXPERIMENT_TYPE_THROUGHPUT,
+                               nvm_logging_type,
+                               YCSB_BENCHMARK_TYPE,
+                               DEFAULT_CLIENT_COUNT,
+                               TRANSACTION_COUNT,
+                               ycsb_update_ratio,
+                               DEFAULT_SKEW_FACTOR,
+                               DEFAULT_FLUSH_MODE,
+                               INVALID_NVM_LATENCY,
+                               pcommit_latency)
+
+                # COLLECT STATS
+                collect_stats(PCOMMIT_LATENCY_DIR, PCOMMIT_LATENCY_CSV, PCOMMIT_LATENCY_EXPERIMENT)
+
+# FLUSH MODE -- EVAL
+def flush_mode_eval():
+
+    # CLEAN UP RESULT DIR
+    clean_up_dir(FLUSH_MODE_DIR)
+
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+        for nvm_logging_type in NVM_LOGGING_TYPES:
+            for flush_mode in FLUSH_MODES:
+                
+                # RUN EXPERIMENT
+                run_experiment(LOGGING,
+                               EXPERIMENT_TYPE_THROUGHPUT,
+                               nvm_logging_type,
+                               YCSB_BENCHMARK_TYPE,
+                               DEFAULT_CLIENT_COUNT,
+                               TRANSACTION_COUNT,
+                               ycsb_update_ratio,
+                               DEFAULT_SKEW_FACTOR,
+                               flush_mode,
+                               INVALID_NVM_LATENCY,
+                               INVALID_PCOMMIT_LATENCY)
+
+                # COLLECT STATS
+                collect_stats(FLUSH_MODE_DIR, FLUSH_MODE_CSV, FLUSH_MODE_EXPERIMENT)
+
 ###################################################################################
 # MAIN
 ###################################################################################
@@ -982,6 +1305,9 @@ if __name__ == '__main__':
     parser.add_argument("-d", "--tpcc_recovery_eval", help='eval tpcc_recovery', action='store_true')
     parser.add_argument("-e", "--ycsb_latency_eval", help='eval ycsb_latency', action='store_true')
     parser.add_argument("-f", "--tpcc_latency_eval", help='eval tpcc_latency', action='store_true')
+    parser.add_argument("-g", "--nvm_latency_eval", help='eval nvm_latency', action='store_true')
+    parser.add_argument("-i", "--pcommit_latency_eval", help='eval pcommit_latency', action='store_true')
+    parser.add_argument("-j", "--flush_mode_eval", help='eval flush_mode', action='store_true')
 
     parser.add_argument("-m", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
     parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
@@ -991,6 +1317,9 @@ if __name__ == '__main__':
     parser.add_argument("-r", "--tpcc_storage_plot", help='plot tpcc_storage', action='store_true')
     parser.add_argument("-s", "--ycsb_latency_plot", help='plot ycsb_latency', action='store_true')
     parser.add_argument("-t", "--tpcc_latency_plot", help='plot tpcc_latency', action='store_true')
+    parser.add_argument("-u", "--nvm_latency_plot", help='plot nvm_latency', action='store_true')
+    parser.add_argument("-v", "--pcommit_latency_plot", help='plot pcommit_latency', action='store_true')
+    parser.add_argument("-w", "--flush_mode_plot", help='plot flush_mode', action='store_true')
 
     args = parser.parse_args()
 
@@ -1018,6 +1347,16 @@ if __name__ == '__main__':
     if args.tpcc_latency_eval:
         tpcc_latency_eval()
 
+    if args.nvm_latency_eval:
+        nvm_latency_eval()
+
+    if args.pcommit_latency_eval:
+        pcommit_latency_eval()
+
+    if args.flush_mode_eval:
+        flush_mode_eval()
+
+
     ## PLOT
 
     if args.ycsb_throughput_plot:
@@ -1044,5 +1383,14 @@ if __name__ == '__main__':
     if args.tpcc_latency_plot:
         tpcc_latency_plot()
 
+    if args.nvm_latency_plot:
+        nvm_latency_plot()
+
+    if args.pcommit_latency_plot:
+        pcommit_latency_plot()
+
+    if args.flush_mode_plot:
+        flush_mode_plot()
+
     #create_legend_logging_types()
-    create_legend_storage()
+    #create_legend_storage()
