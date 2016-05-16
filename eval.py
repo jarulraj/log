@@ -115,11 +115,11 @@ INVALID_PCOMMIT_LATENCY = 0
 OUTPUT_FILE = "outputfile.summary"
 
 # Refer LoggingType in common/types.h
-LOGGING_TYPES = (1, 2, 3, 4)
-LOGGING_NAMES = ("nvm_wal", "nvm_wbl", "hdd_wal", "hdd_wbl")
+LOGGING_TYPES = (1, 2, 3, 4, 5, 6)
+LOGGING_NAMES = ("nvm_wal", "ssd_wbl", "hdd_wal", "nvm_wbl", "ssd_wbl", "hdd_wbl")
 
-NVM_LOGGING_TYPES = LOGGING_TYPES[:2]
-NVM_LOGGING_NAMES = LOGGING_NAMES[:2]
+NVM_LOGGING_TYPES = (1, 4)
+NVM_LOGGING_NAMES = ("nvm_wal", "nvm_wbl")
 
 SCALE_FACTOR = 1
 DATABASE_FILE_SIZE = 4096  # DATABASE FILE SIZE (MB)
@@ -127,7 +127,7 @@ DATABASE_FILE_SIZE = 4096  # DATABASE FILE SIZE (MB)
 DURATION = 1000
 
 CLIENT_COUNTS = (1, 2, 4, 8)
-DEFAULT_CLIENT_COUNT = 2
+DEFAULT_CLIENT_COUNT = 8
 
 YCSB_BENCHMARK_TYPE = 1
 TPCC_BENCHMARK_TYPE = 2
