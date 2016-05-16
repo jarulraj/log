@@ -129,7 +129,7 @@ NVM_LOGGING_NAMES = LOGGING_NAMES[:2]
 SCALE_FACTOR = 1
 DATABASE_FILE_SIZE = 4096  # DATABASE FILE SIZE (MB)
 
-TRANSACTION_COUNT = 10
+DURATION = 1000
 
 CLIENT_COUNTS = (1, 2, 4, 8)
 DEFAULT_CLIENT_COUNT = 2
@@ -142,11 +142,6 @@ RECOVERY_TRANSACTION_COUNTS = (1, 3, 5)
 YCSB_UPDATE_RATIOS = (0, 0.1, 0.5, 0.9)
 YCSB_UPDATE_NAMES = ("read-only", "read-heavy", "balanced", "write-heavy")
 INVALID_UPDATE_RATIO = 0
-
-YCSB_SKEW_FACTORS = (1, 2)
-YCSB_SKEW_NAMES = ("low-skew", "high-skew")
-DEFAULT_SKEW_FACTOR = YCSB_SKEW_FACTORS[0]
-INVALID_SKEW_FACTOR = 1;
 
 FLUSH_MODES = ("1", "2")
 DEFAULT_FLUSH_MODE = 2
@@ -277,14 +272,6 @@ def getLoggingName(logging_type):
     logging_name = LOGGING_NAMES[logging_type_offset]
 
     return logging_name
-
-# Figure out ycsb skew name
-def getYCSBSkewName(ycsb_skew):
-    
-    ycsb_skew_offset = YCSB_SKEW_FACTORS.index(int(ycsb_skew))
-    ycsb_skew_name = YCSB_SKEW_NAMES[ycsb_skew_offset]
-
-    return ycsb_skew_name
 
 ###################################################################################
 # PLOT
@@ -749,30 +736,26 @@ def create_asynchronous_mode_bar_chart(datasets):
 # YCSB THROUGHPUT -- PLOT
 def ycsb_throughput_plot():
 
-    for ycsb_skew_factor in YCSB_SKEW_FACTORS:
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
 
-        ycsb_skew_name = getYCSBSkewName(ycsb_skew_factor)
+        ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
 
-        for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+        datasets = []
+        for logging_type in LOGGING_TYPES:
+
+            # figure out logging name and ycsb update name
+            logging_name = getLoggingName(logging_type)
     
-            ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+            data_file = YCSB_THROUGHPUT_DIR + "/" + ycsb_update_name + "/" + logging_name + "/" + YCSB_THROUGHPUT_CSV
     
-            datasets = []
-            for logging_type in LOGGING_TYPES:
+            dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
+            datasets.append(dataset)
+
+        fig = create_ycsb_throughput_line_chart(datasets)
     
-                # figure out logging name and ycsb update name
-                logging_name = getLoggingName(logging_type)
-        
-                data_file = YCSB_THROUGHPUT_DIR + "/" + ycsb_skew_name + "/" + ycsb_update_name + "/" + logging_name + "/" + YCSB_THROUGHPUT_CSV
-        
-                dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
-                datasets.append(dataset)
+        fileName = "ycsb-" + "throughput-" + ycsb_update_name + ".pdf"
     
-            fig = create_ycsb_throughput_line_chart(datasets)
-        
-            fileName = "ycsb-" + "throughput-" + ycsb_skew_name + "-" + ycsb_update_name + ".pdf"
-        
-            saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
 
 # TPCC THROUGHPUT -- PLOT
 def tpcc_throughput_plot():
@@ -863,30 +846,26 @@ def tpcc_storage_plot():
 # YCSB LATENCY -- PLOT
 def ycsb_latency_plot():
 
-    for ycsb_skew_factor in YCSB_SKEW_FACTORS:
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
 
-        ycsb_skew_name = getYCSBSkewName(ycsb_skew_factor)
+        ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
 
-        for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+        datasets = []
+        for logging_type in LOGGING_TYPES:
+
+            # figure out logging name and ycsb update name
+            logging_name = getLoggingName(logging_type)
     
-            ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+            data_file = YCSB_LATENCY_DIR + "/" + ycsb_update_name + "/" + logging_name + "/" + YCSB_LATENCY_CSV
     
-            datasets = []
-            for logging_type in LOGGING_TYPES:
+            dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
+            datasets.append(dataset)
+
+        fig = create_ycsb_latency_line_chart(datasets)
     
-                # figure out logging name and ycsb update name
-                logging_name = getLoggingName(logging_type)
-        
-                data_file = YCSB_LATENCY_DIR + "/" + ycsb_skew_name + "/" + ycsb_update_name + "/" + logging_name + "/" + YCSB_LATENCY_CSV
-        
-                dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
-                datasets.append(dataset)
+        fileName = "ycsb-" + "latency-" + ycsb_update_name + ".pdf"
     
-            fig = create_ycsb_latency_line_chart(datasets)
-        
-            fileName = "ycsb-" + "latency-" + ycsb_skew_name + "-" + ycsb_update_name + ".pdf"
-        
-            saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
 
 # TPCC LATENCY -- PLOT
 def tpcc_latency_plot():
@@ -1021,9 +1000,8 @@ def run_experiment(program,
                    logging_type,
                    benchmark_type,
                    client_count,
-                   transaction_count,
+                   duration,
                    ycsb_update_ratio,
-                   ycsb_skew_factor,
                    flush_mode,
                    nvm_latency,
                    pcommit_latency,
@@ -1037,12 +1015,11 @@ def run_experiment(program,
                      "-l", str(logging_type),
                      "-k", str(SCALE_FACTOR),
                      "-f", str(DATABASE_FILE_SIZE),
-                     "-t", str(transaction_count),
+                     "-d", str(duration),
                      "-b", str(client_count),
                      "-u", str(ycsb_update_ratio),
-                     "-s", str(ycsb_skew_factor),
                      "-y", str(benchmark_type),
-                     "-d", str(flush_mode),
+                     "-v", str(flush_mode),
                      "-n", str(nvm_latency),
                      "-p", str(pcommit_latency),
                      "-a", str(asynchronous_mode)])
@@ -1066,14 +1043,13 @@ def collect_stats(result_dir,
         ycsb_update_ratio = data[2]
         scale_factor = data[3]
         backend_count = data[4]
-        ycsb_skew_factor = data[5]
-        transaction_count = data[6]
-        nvm_latency = data[7]
-        pcommit_latency = data[8]
-        flush_mode = data[9]
-        asynchronous_mode = data[10]
+        transaction_count = data[5]
+        nvm_latency = data[6]
+        pcommit_latency = data[7]
+        flush_mode = data[8]
+        asynchronous_mode = data[9]
 
-        stat = data[11]
+        stat = data[10]
 
         # figure out logging name and ycsb update name
         logging_name = getLoggingName(logging_type)
@@ -1081,8 +1057,7 @@ def collect_stats(result_dir,
         # MAKE RESULTS FILE DIR
         if category == YCSB_THROUGHPUT_EXPERIMENT or category == YCSB_LATENCY_EXPERIMENT:
             ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
-            ycsb_skew_name = getYCSBSkewName(ycsb_skew_factor)
-            result_directory = result_dir + "/" + ycsb_skew_name + "/" + ycsb_update_name + "/" + logging_name
+            result_directory = result_dir + "/" + ycsb_update_name + "/" + logging_name
         elif category == TPCC_THROUGHPUT_EXPERIMENT or category == TPCC_LATENCY_EXPERIMENT:
             result_directory = result_dir + "/" + logging_name
         elif category == YCSB_RECOVERY_EXPERIMENT or category == TPCC_RECOVERY_EXPERIMENT:
@@ -1143,27 +1118,25 @@ def ycsb_throughput_eval():
     # CLEAN UP RESULT DIR
     clean_up_dir(YCSB_THROUGHPUT_DIR)
 
-    for ycsb_skew_factor in YCSB_SKEW_FACTORS:
-        for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
-            for logging_type in LOGGING_TYPES:
-                for client_count in CLIENT_COUNTS:
-                    
-                    # RUN EXPERIMENT
-                    run_experiment(LOGGING,
-                                   EXPERIMENT_TYPE_THROUGHPUT,
-                                   logging_type,
-                                   YCSB_BENCHMARK_TYPE,
-                                   client_count,
-                                   TRANSACTION_COUNT,
-                                   ycsb_update_ratio,
-                                   ycsb_skew_factor,
-                                   DEFAULT_FLUSH_MODE,
-                                   INVALID_NVM_LATENCY,
-                                   INVALID_PCOMMIT_LATENCY,
-                                   DEFAULT_ASYNCHRONOUS_MODE)
-    
-                    # COLLECT STATS
-                    collect_stats(YCSB_THROUGHPUT_DIR, YCSB_THROUGHPUT_CSV, YCSB_THROUGHPUT_EXPERIMENT)
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+        for logging_type in LOGGING_TYPES:
+            for client_count in CLIENT_COUNTS:
+                
+                # RUN EXPERIMENT
+                run_experiment(LOGGING,
+                               EXPERIMENT_TYPE_THROUGHPUT,
+                               logging_type,
+                               YCSB_BENCHMARK_TYPE,
+                               client_count,
+                               DURATION,
+                               ycsb_update_ratio,
+                               DEFAULT_FLUSH_MODE,
+                               INVALID_NVM_LATENCY,
+                               INVALID_PCOMMIT_LATENCY,
+                               DEFAULT_ASYNCHRONOUS_MODE)
+
+                # COLLECT STATS
+                collect_stats(YCSB_THROUGHPUT_DIR, YCSB_THROUGHPUT_CSV, YCSB_THROUGHPUT_EXPERIMENT)
 
 # TPCC THROUGHPUT -- EVAL
 def tpcc_throughput_eval():
@@ -1180,9 +1153,8 @@ def tpcc_throughput_eval():
                            logging_type,
                            TPCC_BENCHMARK_TYPE,
                            client_count,
-                           TRANSACTION_COUNT,
+                           DURATION,
                            INVALID_UPDATE_RATIO,
-                           INVALID_SKEW_FACTOR,
                            DEFAULT_FLUSH_MODE,
                            INVALID_NVM_LATENCY,
                            INVALID_PCOMMIT_LATENCY,
@@ -1199,7 +1171,6 @@ def ycsb_recovery_eval():
 
     client_count = 1
     ycsb_recovery_update_ratio = 1
-    ycsb_recovery_skew_factor = 1
     
     for recovery_transaction_count in RECOVERY_TRANSACTION_COUNTS:
             for logging_type in LOGGING_TYPES:
@@ -1212,7 +1183,6 @@ def ycsb_recovery_eval():
                                client_count,
                                recovery_transaction_count,
                                ycsb_recovery_update_ratio,
-                               ycsb_recovery_skew_factor,
                                DEFAULT_FLUSH_MODE,
                                INVALID_NVM_LATENCY,
                                INVALID_PCOMMIT_LATENCY,
@@ -1240,7 +1210,6 @@ def tpcc_recovery_eval():
                                client_count,
                                recovery_transaction_count,
                                INVALID_UPDATE_RATIO,
-                               INVALID_SKEW_FACTOR,
                                DEFAULT_FLUSH_MODE,
                                INVALID_NVM_LATENCY,
                                INVALID_PCOMMIT_LATENCY,
@@ -1255,27 +1224,25 @@ def ycsb_latency_eval():
     # CLEAN UP RESULT DIR
     clean_up_dir(YCSB_LATENCY_DIR)
 
-    for ycsb_skew_factor in YCSB_SKEW_FACTORS:
-        for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
-            for logging_type in LOGGING_TYPES:
-                for client_count in CLIENT_COUNTS:
-                    
-                    # RUN EXPERIMENT
-                    run_experiment(LOGGING,
-                                   EXPERIMENT_TYPE_LATENCY,
-                                   logging_type,
-                                   YCSB_BENCHMARK_TYPE,
-                                   client_count,
-                                   TRANSACTION_COUNT,
-                                   ycsb_update_ratio,
-                                   ycsb_skew_factor,
-                                   DEFAULT_FLUSH_MODE,
-                                   INVALID_NVM_LATENCY,
-                                   INVALID_PCOMMIT_LATENCY,
-                                   DEFAULT_ASYNCHRONOUS_MODE)
-    
-                    # COLLECT STATS
-                    collect_stats(YCSB_LATENCY_DIR, YCSB_LATENCY_CSV, YCSB_LATENCY_EXPERIMENT)
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+        for logging_type in LOGGING_TYPES:
+            for client_count in CLIENT_COUNTS:
+                
+                # RUN EXPERIMENT
+                run_experiment(LOGGING,
+                               EXPERIMENT_TYPE_LATENCY,
+                               logging_type,
+                               YCSB_BENCHMARK_TYPE,
+                               client_count,
+                               DURATION,
+                               ycsb_update_ratio,
+                               DEFAULT_FLUSH_MODE,
+                               INVALID_NVM_LATENCY,
+                               INVALID_PCOMMIT_LATENCY,
+                               DEFAULT_ASYNCHRONOUS_MODE)
+
+                # COLLECT STATS
+                collect_stats(YCSB_LATENCY_DIR, YCSB_LATENCY_CSV, YCSB_LATENCY_EXPERIMENT)
 
 # TPCC LATENCY -- EVAL
 def tpcc_latency_eval():
@@ -1292,9 +1259,8 @@ def tpcc_latency_eval():
                            logging_type,
                            TPCC_BENCHMARK_TYPE,
                            client_count,
-                           TRANSACTION_COUNT,
+                           DURATION,
                            INVALID_UPDATE_RATIO,
-                           INVALID_SKEW_FACTOR,
                            DEFAULT_FLUSH_MODE,
                            INVALID_NVM_LATENCY,
                            INVALID_PCOMMIT_LATENCY,
@@ -1319,9 +1285,8 @@ def nvm_latency_eval():
                                nvm_logging_type,
                                YCSB_BENCHMARK_TYPE,
                                DEFAULT_CLIENT_COUNT,
-                               TRANSACTION_COUNT,
+                               DURATION,
                                ycsb_update_ratio,
-                               DEFAULT_SKEW_FACTOR,
                                DEFAULT_FLUSH_MODE,
                                nvm_latency,
                                INVALID_PCOMMIT_LATENCY,
@@ -1346,9 +1311,8 @@ def pcommit_latency_eval():
                                nvm_logging_type,
                                YCSB_BENCHMARK_TYPE,
                                DEFAULT_CLIENT_COUNT,
-                               TRANSACTION_COUNT,
+                               DURATION,
                                ycsb_update_ratio,
-                               DEFAULT_SKEW_FACTOR,
                                DEFAULT_FLUSH_MODE,
                                INVALID_NVM_LATENCY,
                                pcommit_latency,
@@ -1373,9 +1337,8 @@ def flush_mode_eval():
                                nvm_logging_type,
                                YCSB_BENCHMARK_TYPE,
                                DEFAULT_CLIENT_COUNT,
-                               TRANSACTION_COUNT,
+                               DURATION,
                                ycsb_update_ratio,
-                               DEFAULT_SKEW_FACTOR,
                                flush_mode,
                                INVALID_NVM_LATENCY,
                                INVALID_PCOMMIT_LATENCY,
@@ -1401,9 +1364,8 @@ def asynchronous_mode_eval():
                                nvm_logging_type,
                                YCSB_BENCHMARK_TYPE,
                                DEFAULT_CLIENT_COUNT,
-                               TRANSACTION_COUNT,
+                               DURATION,
                                ycsb_update_ratio,
-                               DEFAULT_SKEW_FACTOR,
                                DEFAULT_FLUSH_MODE,
                                INVALID_NVM_LATENCY,
                                INVALID_PCOMMIT_LATENCY,
