@@ -49,8 +49,8 @@ OPT_GRAPH_HEIGHT = 300
 OPT_GRAPH_WIDTH = 400
 
 # http://colrd.com/palette/19308/
-COLOR_MAP = ('#447c69', '#74c493', '#e279a3', '#c94a53',
-             '#9163b6', '#4e2472', '#8e8c6d', '#51574a')
+COLOR_MAP = ('#50b577', '#c94a53', '#7750b5',
+             '#c6c5b4', '#e279a3', '#b4b5c6')
 
 OPT_COLORS = COLOR_MAP
 
@@ -416,10 +416,12 @@ def create_ycsb_recovery_bar_chart(datasets):
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Recovery Latency (ms)", fontproperties=LABEL_FP)
+    ax1.set_yscale('log', nonposy='clip')
+    ax1.set_yticklabels(['0.01', '0.1', '1', '10', '100', '1000'])
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("Number of Clients", fontproperties=LABEL_FP)
+    ax1.set_xlabel("Duration Since Checkpoint (ms)", fontproperties=LABEL_FP)
     ax1.set_xticks(ind + margin + (group * width)/2.0 )
     ax1.set_xticklabels(x_labels)
 
