@@ -1480,5 +1480,5 @@ if __name__ == '__main__':
     if args.asynchronous_mode_plot:
         asynchronous_mode_plot()
 
-    create_legend_logging_types()
+    #create_legend_logging_types()
     #create_legend_storage()
