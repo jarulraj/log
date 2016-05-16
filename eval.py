@@ -132,7 +132,7 @@ DEFAULT_CLIENT_COUNT = 8
 YCSB_BENCHMARK_TYPE = 1
 TPCC_BENCHMARK_TYPE = 2
 
-RECOVERY_TRANSACTION_COUNTS = (1, 3, 5)
+RECOVERY_DURATIONS = (500, 5000, 50000)
 
 YCSB_UPDATE_RATIOS = (0, 0.1, 0.5, 0.9)
 YCSB_UPDATE_NAMES = ("read-only", "read-heavy", "balanced", "write-heavy")
@@ -386,7 +386,7 @@ def create_ycsb_recovery_bar_chart(datasets):
     ax1 = fig.add_subplot(111)
 
     # X-AXIS
-    x_labels = [str(i) for i in RECOVERY_TRANSACTION_COUNTS]
+    x_labels = [str(i) for i in RECOVERY_DURATIONS]
     N = len(x_labels)
     M = len(LOGGING_NAMES)
     ind = np.arange(N)
@@ -783,7 +783,7 @@ def ycsb_recovery_plot():
 
         data_file = YCSB_RECOVERY_DIR + "/" + logging_name + "/" + YCSB_RECOVERY_CSV
 
-        dataset = loadDataFile(len(RECOVERY_TRANSACTION_COUNTS), 2, data_file)
+        dataset = loadDataFile(len(RECOVERY_DURATIONS), 2, data_file)
         datasets.append(dataset)
 
     fig = create_ycsb_recovery_bar_chart(datasets)
@@ -803,7 +803,7 @@ def tpcc_recovery_plot():
 
         data_file = TPCC_RECOVERY_DIR + "/" + logging_name + "/" + TPCC_RECOVERY_CSV
 
-        dataset = loadDataFile(len(RECOVERY_TRANSACTION_COUNTS), 2, data_file)
+        dataset = loadDataFile(len(RECOVERY_DURATIONS), 2, data_file)
         datasets.append(dataset)
 
     fig = create_ycsb_recovery_bar_chart(datasets)
@@ -1167,7 +1167,7 @@ def ycsb_recovery_eval():
     client_count = 1
     ycsb_recovery_update_ratio = 1
 
-    for recovery_transaction_count in RECOVERY_TRANSACTION_COUNTS:
+    for recovery_transaction_count in RECOVERY_DURATIONS:
             for logging_type in LOGGING_TYPES:
 
                 # RUN EXPERIMENT
@@ -1194,7 +1194,7 @@ def tpcc_recovery_eval():
 
     client_count = 1
 
-    for recovery_transaction_count in RECOVERY_TRANSACTION_COUNTS:
+    for recovery_transaction_count in RECOVERY_DURATIONS:
             for logging_type in LOGGING_TYPES:
 
                 # RUN EXPERIMENT
