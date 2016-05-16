@@ -49,7 +49,7 @@ OPT_GRAPH_HEIGHT = 300
 OPT_GRAPH_WIDTH = 400
 
 # http://colrd.com/palette/19308/
-COLOR_MAP = ('#447c69', '#74c493', '#e279a3', '#c94a53', 
+COLOR_MAP = ('#447c69', '#74c493', '#e279a3', '#c94a53',
              '#9163b6', '#4e2472', '#8e8c6d', '#51574a')
 
 OPT_COLORS = COLOR_MAP
@@ -116,7 +116,7 @@ OUTPUT_FILE = "outputfile.summary"
 
 # Refer LoggingType in common/types.h
 LOGGING_TYPES = (1, 2, 3, 4, 5, 6)
-LOGGING_NAMES = ("nvm_wal", "ssd_wbl", "hdd_wal", "nvm_wbl", "ssd_wbl", "hdd_wbl")
+LOGGING_NAMES = ("nvm_wal", "ssd_wal", "hdd_wal", "nvm_wbl", "ssd_wbl", "hdd_wbl")
 
 NVM_LOGGING_TYPES = (1, 4)
 NVM_LOGGING_NAMES = ("nvm_wal", "nvm_wbl")
@@ -157,7 +157,7 @@ YCSB_THROUGHPUT_EXPERIMENT = 1
 YCSB_THROUGHPUT_CSV = "ycsb_throughput.csv"
 
 TPCC_THROUGHPUT_DIR = BASE_DIR + "/results/throughput/tpcc/"
-TPCC_THROUGHPUT_EXPERIMENT = 2 
+TPCC_THROUGHPUT_EXPERIMENT = 2
 TPCC_THROUGHPUT_CSV = "tpcc_throughput.csv"
 
 YCSB_RECOVERY_DIR = BASE_DIR + "/results/recovery/ycsb/"
@@ -179,7 +179,7 @@ YCSB_LATENCY_EXPERIMENT = 5
 YCSB_LATENCY_CSV = "ycsb_latency.csv"
 
 TPCC_LATENCY_DIR = BASE_DIR + "/results/latency/tpcc/"
-TPCC_LATENCY_EXPERIMENT = 6 
+TPCC_LATENCY_EXPERIMENT = 6
 TPCC_LATENCY_CSV = "tpcc_latency.csv"
 
 NVM_LATENCY_DIR = BASE_DIR + "/results/nvm_latency/"
@@ -187,11 +187,11 @@ NVM_LATENCY_EXPERIMENT = 7
 NVM_LATENCY_CSV = "nvm_latency.csv"
 
 PCOMMIT_LATENCY_DIR = BASE_DIR + "/results/pcommit_latency/"
-PCOMMIT_LATENCY_EXPERIMENT = 8 
+PCOMMIT_LATENCY_EXPERIMENT = 8
 PCOMMIT_LATENCY_CSV = "pcommit_latency.csv"
 
 FLUSH_MODE_DIR = BASE_DIR + "/results/flush_mode/"
-FLUSH_MODE_EXPERIMENT = 9 
+FLUSH_MODE_EXPERIMENT = 9
 FLUSH_MODE_CSV = "flush_mode.csv"
 
 ASYNCHRONOUS_MODE_DIR = BASE_DIR + "/results/asynchronous_mode/"
@@ -262,7 +262,7 @@ def getYCSBUpdateName(ycsb_update_ratio):
 
 # Figure out logging name
 def getLoggingName(logging_type):
-    
+
     logging_type_offset = LOGGING_TYPES.index(int(logging_type))
     logging_name = LOGGING_NAMES[logging_type_offset]
 
@@ -276,7 +276,7 @@ def create_legend_logging_types():
     fig = pylab.figure()
     ax1 = fig.add_subplot(111)
 
-    figlegend = pylab.figure(figsize=(12, 0.5))
+    figlegend = pylab.figure(figsize=(16, 0.5))
 
     N = len(LOGGING_NAMES);
     ind = np.arange(1)
@@ -294,7 +294,7 @@ def create_legend_logging_types():
         idx = idx + 1
 
     LOGGING_NAMES_UPPER_CASE = [x.upper() for x in LOGGING_NAMES]
-    
+
     # LEGEND
     figlegend.legend(bars, LOGGING_NAMES_UPPER_CASE, prop=LEGEND_FP,
                      loc=1, ncol=len(LOGGING_NAMES),
@@ -310,26 +310,26 @@ def create_legend_storage():
 
     figlegend = pylab.figure(figsize=(10, 0.5))
 
-    num_items = 5;   
-    ind = np.arange(1)  
+    num_items = 5;
+    ind = np.arange(1)
     margin = 0.10
-    width = (1.0 - 2 * margin) / num_items      
-      
+    width = (1.0 - 2 * margin) / num_items
+
     bars = [None] * len(STORAGE_LABELS) * 2
 
-    for group in xrange(len(STORAGE_LABELS)):        
+    for group in xrange(len(STORAGE_LABELS)):
         data = [1]
-        bars[group] = ax1.bar(ind + margin + (group * width), data, width, 
+        bars[group] = ax1.bar(ind + margin + (group * width), data, width,
                               color=OPT_STACK_COLORS[group], linewidth=BAR_LINEWIDTH)
-        
+
     # LEGEND
-    figlegend.legend(bars, STORAGE_LABELS, prop=LABEL_FP, 
-                     loc=1, ncol=len(STORAGE_LABELS), 
-                     mode="expand", shadow=OPT_LEGEND_SHADOW, 
-                     frameon=False, borderaxespad=0.0, 
+    figlegend.legend(bars, STORAGE_LABELS, prop=LABEL_FP,
+                     loc=1, ncol=len(STORAGE_LABELS),
+                     mode="expand", shadow=OPT_LEGEND_SHADOW,
+                     frameon=False, borderaxespad=0.0,
                      handleheight=2, handlelength=3.5)
 
-    figlegend.savefig('legend_storage.pdf') 
+    figlegend.savefig('legend_storage.pdf')
 
 def create_ycsb_throughput_line_chart(datasets):
     fig = plot.figure()
@@ -338,7 +338,7 @@ def create_ycsb_throughput_line_chart(datasets):
     # X-AXIS
     x_labels = [str(i) for i in CLIENT_COUNTS]
     N = len(x_labels)
-    ind = np.arange(N)  
+    ind = np.arange(N)
 
     idx = 0
     for group in xrange(len(datasets)):
@@ -352,26 +352,26 @@ def create_ycsb_throughput_line_chart(datasets):
 
         LOG.info("group_data = %s", str(group_data))
 
-        ax1.plot(ind + 0.5, group_data, 
-                 color=OPT_LINE_COLORS[idx], 
-                 linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, 
-                 label=str(group))        
+        ax1.plot(ind + 0.5, group_data,
+                 color=OPT_LINE_COLORS[idx],
+                 linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE,
+                 label=str(group))
 
-        idx = idx + 1  
+        idx = idx + 1
 
 
     # GRID
     makeGrid(ax1)
-            
+
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
 
     # X-AXIS
-    ax1.set_xticks(ind + 0.5)              
+    ax1.set_xticks(ind + 0.5)
     ax1.set_xlabel("Number of Clients", fontproperties=LABEL_FP)
-    ax1.set_xticklabels(x_labels)    
+    ax1.set_xticklabels(x_labels)
     ax1.set_xlim([0.25, N - 0.25])
 
     for label in ax1.get_yticklabels() :
@@ -407,22 +407,22 @@ def create_ycsb_recovery_bar_chart(datasets):
 
         bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
                                       color=OPT_COLORS[group],
-                                      linewidth=BAR_LINEWIDTH)        
+                                      linewidth=BAR_LINEWIDTH)
 
     # GRID
     makeGrid(ax1)
-            
+
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Recovery Latency (ms)", fontproperties=LABEL_FP)
 
     # X-AXIS
-    ax1.set_xticks(ind + 0.5)              
+    ax1.set_xticks(ind + 0.5)
     ax1.set_xlabel("Number of Clients", fontproperties=LABEL_FP)
     ax1.set_xticks(ind + margin + (group * width)/2.0 )
     ax1.set_xticklabels(x_labels)
-    
+
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
     for label in ax1.get_xticklabels() :
@@ -433,9 +433,9 @@ def create_ycsb_recovery_bar_chart(datasets):
 def create_ycsb_storage_bar_chart(datasets):
     fig = plot.figure()
     ax1 = fig.add_subplot(111)
-    
+
     num_items = len(STORAGE_LOGGING_TYPES);
-    ind = np.arange(num_items)  
+    ind = np.arange(num_items)
     margin = 0.2
     width = 1.0
 
@@ -444,38 +444,38 @@ def create_ycsb_storage_bar_chart(datasets):
 
     bars = [None] * len(STORAGE_LABELS) * 2
     YLIMIT = len(STORAGE_LABELS)
-        
+
     datasets = map(list, map(None,*datasets))
-    
-    # TYPE      
-    bottom_list = [0] * len(datasets[0])   
-    for type in  xrange(len(datasets)):        
+
+    # TYPE
+    bottom_list = [0] * len(datasets[0])
+    for type in  xrange(len(datasets)):
         LOG.info("TYPE :: %s", datasets[type])
 
-        bars[type] = ax1.bar(ind + margin + col_offset, datasets[type], col_width, 
+        bars[type] = ax1.bar(ind + margin + col_offset, datasets[type], col_width,
                              color=OPT_STACK_COLORS[type], linewidth=BAR_LINEWIDTH,
                              bottom = bottom_list)
         bottom_list = map(add, bottom_list, datasets[type])
-        
+
     # GRID
     axes = ax1.get_axes()
     makeGrid(ax1)
-        
+
     # Y-AXIS
     ax1.set_ylabel("Storage (GB)", fontproperties=LABEL_FP)
     ax1.yaxis.set_major_locator(MaxNLocator(5))
     axes.set_ylim(0, YLIMIT)
-        
+
     # X-AXIS
     ax1.tick_params(axis='x', which='both', top='off', bottom='off')
     ax1.set_xticks(ind + margin + 0.6)
     ax1.set_xticklabels(STORAGE_LOGGING_TYPES)
-        
+
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
     for label in ax1.get_xticklabels() :
         label.set_fontproperties(TICK_FP)
-    
+
     return (fig)
 
 def create_ycsb_latency_line_chart(datasets):
@@ -485,7 +485,7 @@ def create_ycsb_latency_line_chart(datasets):
     # X-AXIS
     x_labels = [str(i) for i in CLIENT_COUNTS]
     N = len(x_labels)
-    ind = np.arange(N)  
+    ind = np.arange(N)
 
     idx = 0
     for group in xrange(len(datasets)):
@@ -499,26 +499,26 @@ def create_ycsb_latency_line_chart(datasets):
 
         LOG.info("group_data = %s", str(group_data))
 
-        ax1.plot(ind + 0.5, group_data, 
-                 color=OPT_LINE_COLORS[idx], 
-                 linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, 
-                 label=str(group))        
+        ax1.plot(ind + 0.5, group_data,
+                 color=OPT_LINE_COLORS[idx],
+                 linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE,
+                 label=str(group))
 
-        idx = idx + 1  
+        idx = idx + 1
 
 
     # GRID
     makeGrid(ax1)
-            
+
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Latency (ms)", fontproperties=LABEL_FP)
 
     # X-AXIS
-    ax1.set_xticks(ind + 0.5)              
+    ax1.set_xticks(ind + 0.5)
     ax1.set_xlabel("Number of Clients", fontproperties=LABEL_FP)
-    ax1.set_xticklabels(x_labels)    
+    ax1.set_xticklabels(x_labels)
     ax1.set_xlim([0.25, N - 0.25])
 
     for label in ax1.get_yticklabels() :
@@ -540,7 +540,7 @@ def create_nvm_latency_bar_chart(datasets):
     margin = 0.15
     width = ((1.0 - 2 * margin) / M)
     bars = [None] * M * N
-    
+
     for group in xrange(len(datasets)):
         # GROUP
         group_data = []
@@ -554,19 +554,19 @@ def create_nvm_latency_bar_chart(datasets):
 
         bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
                                       color=OPT_COLORS[group],
-                                      linewidth=BAR_LINEWIDTH)        
+                                      linewidth=BAR_LINEWIDTH)
 
 
     # GRID
     makeGrid(ax1)
-            
+
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
 
     # X-AXIS
-    ax1.set_xticks(ind + 0.5)              
+    ax1.set_xticks(ind + 0.5)
     ax1.set_xlabel("NVM Latency", fontproperties=LABEL_FP)
     ax1.set_xticklabels(x_labels)
 
@@ -589,7 +589,7 @@ def create_pcommit_latency_bar_chart(datasets):
     margin = 0.15
     width = ((1.0 - 2 * margin) / M)
     bars = [None] * M * N
-    
+
     for group in xrange(len(datasets)):
         # GROUP
         group_data = []
@@ -603,19 +603,19 @@ def create_pcommit_latency_bar_chart(datasets):
 
         bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
                                       color=OPT_COLORS[group],
-                                      linewidth=BAR_LINEWIDTH)        
+                                      linewidth=BAR_LINEWIDTH)
 
 
     # GRID
     makeGrid(ax1)
-            
+
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
 
     # X-AXIS
-    ax1.set_xticks(ind + 0.5)              
+    ax1.set_xticks(ind + 0.5)
     ax1.set_xlabel("PCOMMIT Latency", fontproperties=LABEL_FP)
     ax1.set_xticklabels(x_labels)
 
@@ -638,7 +638,7 @@ def create_flush_mode_bar_chart(datasets):
     margin = 0.15
     width = ((1.0 - 2 * margin) / M)
     bars = [None] * M * N
-    
+
     for group in xrange(len(datasets)):
         # GROUP
         group_data = []
@@ -652,19 +652,19 @@ def create_flush_mode_bar_chart(datasets):
 
         bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
                                       color=OPT_COLORS[group],
-                                      linewidth=BAR_LINEWIDTH)        
+                                      linewidth=BAR_LINEWIDTH)
 
 
     # GRID
     makeGrid(ax1)
-            
+
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
 
     # X-AXIS
-    ax1.set_xticks(ind + 0.5)              
+    ax1.set_xticks(ind + 0.5)
     ax1.set_xlabel("Flush Mode", fontproperties=LABEL_FP)
     ax1.set_xticklabels(x_labels)
 
@@ -687,7 +687,7 @@ def create_asynchronous_mode_bar_chart(datasets):
     margin = 0.15
     width = ((1.0 - 2 * margin) / M)
     bars = [None] * M * N
-    
+
     for group in xrange(len(datasets)):
         # GROUP
         group_data = []
@@ -701,19 +701,19 @@ def create_asynchronous_mode_bar_chart(datasets):
 
         bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
                                       color=OPT_COLORS[group],
-                                      linewidth=BAR_LINEWIDTH)        
+                                      linewidth=BAR_LINEWIDTH)
 
 
     # GRID
     makeGrid(ax1)
-            
+
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
 
     # X-AXIS
-    ax1.set_xticks(ind + 0.5)              
+    ax1.set_xticks(ind + 0.5)
     ax1.set_xlabel("Asynchronous Mode", fontproperties=LABEL_FP)
     ax1.set_xticklabels(x_labels)
 
@@ -740,16 +740,16 @@ def ycsb_throughput_plot():
 
             # figure out logging name and ycsb update name
             logging_name = getLoggingName(logging_type)
-    
+
             data_file = YCSB_THROUGHPUT_DIR + "/" + ycsb_update_name + "/" + logging_name + "/" + YCSB_THROUGHPUT_CSV
-    
+
             dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
             datasets.append(dataset)
 
         fig = create_ycsb_throughput_line_chart(datasets)
-    
+
         fileName = "ycsb-" + "throughput-" + ycsb_update_name + ".pdf"
-    
+
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
 
 # TPCC THROUGHPUT -- PLOT
@@ -769,7 +769,7 @@ def tpcc_throughput_plot():
     fig = create_ycsb_throughput_line_chart(datasets)
 
     fileName = "tpcc-" + "throughput" + ".pdf"
-    
+
     saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
 
 # YCSB RECOVERY -- PLOT
@@ -789,9 +789,9 @@ def ycsb_recovery_plot():
     fig = create_ycsb_recovery_bar_chart(datasets)
 
     fileName = "ycsb-" + "recovery" + ".pdf"
-    
+
     saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
-    
+
 # TPCC RECOVERY -- PLOT
 def tpcc_recovery_plot():
 
@@ -809,34 +809,34 @@ def tpcc_recovery_plot():
     fig = create_ycsb_recovery_bar_chart(datasets)
 
     fileName = "tpcc-" + "recovery" + ".pdf"
-    
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)    
 
-# YCSB STORAGE -- PLOT               
-def ycsb_storage_plot():    
-    
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+
+# YCSB STORAGE -- PLOT
+def ycsb_storage_plot():
+
     data_file =  os.path.realpath(os.path.join(YCSB_STORAGE_DIR, YCSB_STORAGE_CSV))
 
     dataset = loadDataFile(len(STORAGE_LOGGING_TYPES), len(STORAGE_LABELS) + 1, data_file)
-                                      
+
     fig = create_ycsb_storage_bar_chart(dataset)
 
     fileName = "ycsb-storage.pdf"
-    
+
     saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/2, height=OPT_GRAPH_HEIGHT/2.0)
-    
-# TPCC STORAGE -- PLOT               
-def tpcc_storage_plot():    
-    
+
+# TPCC STORAGE -- PLOT
+def tpcc_storage_plot():
+
     data_file =  os.path.realpath(os.path.join(TPCC_STORAGE_DIR, TPCC_STORAGE_CSV))
 
     dataset = loadDataFile(len(STORAGE_LOGGING_TYPES), len(STORAGE_LABELS) + 1, data_file)
-                                      
-    fig = create_ycsb_storage_bar_chart(dataset)                        
+
+    fig = create_ycsb_storage_bar_chart(dataset)
 
     fileName = "tpcc-storage.pdf"
-    
-    saveGraph(fig, fileName, width=OPT_GRAPH_WIDTH/2, height=OPT_GRAPH_HEIGHT/2.0)     
+
+    saveGraph(fig, fileName, width=OPT_GRAPH_WIDTH/2, height=OPT_GRAPH_HEIGHT/2.0)
 
 # YCSB LATENCY -- PLOT
 def ycsb_latency_plot():
@@ -850,16 +850,16 @@ def ycsb_latency_plot():
 
             # figure out logging name and ycsb update name
             logging_name = getLoggingName(logging_type)
-    
+
             data_file = YCSB_LATENCY_DIR + "/" + ycsb_update_name + "/" + logging_name + "/" + YCSB_LATENCY_CSV
-    
+
             dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
             datasets.append(dataset)
 
         fig = create_ycsb_latency_line_chart(datasets)
-    
+
         fileName = "ycsb-" + "latency-" + ycsb_update_name + ".pdf"
-    
+
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
 
 # TPCC LATENCY -- PLOT
@@ -879,7 +879,7 @@ def tpcc_latency_plot():
     fig = create_ycsb_latency_line_chart(datasets)
 
     fileName = "tpcc-" + "latency" + ".pdf"
-    
+
     saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
 
 # NVM LATENCY -- PLOT
@@ -894,16 +894,16 @@ def nvm_latency_plot():
 
             # figure out logging name and ycsb update name
             nvm_logging_name = getLoggingName(nvm_logging_type)
-    
+
             data_file = NVM_LATENCY_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + NVM_LATENCY_CSV
-    
+
             dataset = loadDataFile(len(NVM_LATENCIES), 2, data_file)
             datasets.append(dataset)
 
         fig = create_nvm_latency_bar_chart(datasets)
-    
+
         fileName = "nvm-latency-" + ycsb_update_name + ".pdf"
-    
+
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
 
 # PCOMMIT LATENCY -- PLOT
@@ -918,18 +918,18 @@ def pcommit_latency_plot():
 
             # figure out logging name and ycsb update name
             nvm_logging_name = getLoggingName(nvm_logging_type)
-    
+
             data_file = PCOMMIT_LATENCY_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + PCOMMIT_LATENCY_CSV
-    
+
             dataset = loadDataFile(len(PCOMMIT_LATENCIES), 2, data_file)
             datasets.append(dataset)
 
         fig = create_pcommit_latency_bar_chart(datasets)
-    
+
         fileName = "pcommit-latency-" + ycsb_update_name + ".pdf"
-    
+
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
-                
+
 # FLUSH MODE -- PLOT
 def flush_mode_plot():
 
@@ -942,16 +942,16 @@ def flush_mode_plot():
 
             # figure out logging name and ycsb update name
             nvm_logging_name = getLoggingName(nvm_logging_type)
-    
+
             data_file = FLUSH_MODE_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + FLUSH_MODE_CSV
-    
+
             dataset = loadDataFile(len(FLUSH_MODES), 2, data_file)
             datasets.append(dataset)
 
         fig = create_flush_mode_bar_chart(datasets)
-    
+
         fileName = "flush-mode-" + ycsb_update_name + ".pdf"
-    
+
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
 
 # ASYNCHRONOUS MODE -- PLOT
@@ -966,18 +966,18 @@ def asynchronous_mode_plot():
 
             # figure out logging name and ycsb update name
             nvm_logging_name = getLoggingName(nvm_logging_type)
-    
+
             data_file = ASYNCHRONOUS_MODE_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + ASYNCHRONOUS_MODE_CSV
-    
+
             dataset = loadDataFile(len(ASYNCHRONOUS_MODES), 2, data_file)
             datasets.append(dataset)
 
         fig = create_asynchronous_mode_bar_chart(datasets)
-    
+
         fileName = "asynchronous-mode-" + ycsb_update_name + ".pdf"
-    
+
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
-        
+
 ###################################################################################
 # EVAL HELPERS
 ###################################################################################
@@ -1004,7 +1004,7 @@ def run_experiment(program,
 
     # cleanup
     subprocess.call(["rm -f " + OUTPUT_FILE], shell=True)
-    
+
     subprocess.call([program,
                      "-e", str(experiment_type),
                      "-l", str(logging_type),
@@ -1116,7 +1116,7 @@ def ycsb_throughput_eval():
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
         for logging_type in LOGGING_TYPES:
             for client_count in CLIENT_COUNTS:
-                
+
                 # RUN EXPERIMENT
                 run_experiment(LOGGING,
                                EXPERIMENT_TYPE_THROUGHPUT,
@@ -1138,10 +1138,10 @@ def tpcc_throughput_eval():
 
     # CLEAN UP RESULT DIR
     clean_up_dir(TPCC_THROUGHPUT_DIR)
-    
+
     for logging_type in LOGGING_TYPES:
         for client_count in CLIENT_COUNTS:
-            
+
             # RUN EXPERIMENT
             run_experiment(LOGGING,
                            EXPERIMENT_TYPE_THROUGHPUT,
@@ -1166,10 +1166,10 @@ def ycsb_recovery_eval():
 
     client_count = 1
     ycsb_recovery_update_ratio = 1
-    
+
     for recovery_transaction_count in RECOVERY_TRANSACTION_COUNTS:
             for logging_type in LOGGING_TYPES:
-                    
+
                 # RUN EXPERIMENT
                 run_experiment(LOGGING,
                                EXPERIMENT_TYPE_RECOVERY,
@@ -1193,10 +1193,10 @@ def tpcc_recovery_eval():
     clean_up_dir(TPCC_RECOVERY_DIR)
 
     client_count = 1
-    
+
     for recovery_transaction_count in RECOVERY_TRANSACTION_COUNTS:
             for logging_type in LOGGING_TYPES:
-                    
+
                 # RUN EXPERIMENT
                 run_experiment(LOGGING,
                                EXPERIMENT_TYPE_RECOVERY,
@@ -1222,7 +1222,7 @@ def ycsb_latency_eval():
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
         for logging_type in LOGGING_TYPES:
             for client_count in CLIENT_COUNTS:
-                
+
                 # RUN EXPERIMENT
                 run_experiment(LOGGING,
                                EXPERIMENT_TYPE_LATENCY,
@@ -1244,10 +1244,10 @@ def tpcc_latency_eval():
 
     # CLEAN UP RESULT DIR
     clean_up_dir(TPCC_LATENCY_DIR)
-    
+
     for logging_type in LOGGING_TYPES:
         for client_count in CLIENT_COUNTS:
-            
+
             # RUN EXPERIMENT
             run_experiment(LOGGING,
                            EXPERIMENT_TYPE_LATENCY,
@@ -1273,7 +1273,7 @@ def nvm_latency_eval():
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
         for nvm_logging_type in NVM_LOGGING_TYPES:
             for nvm_latency in NVM_LATENCIES:
-                
+
                 # RUN EXPERIMENT
                 run_experiment(LOGGING,
                                EXPERIMENT_TYPE_THROUGHPUT,
@@ -1299,7 +1299,7 @@ def pcommit_latency_eval():
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
         for nvm_logging_type in NVM_LOGGING_TYPES:
             for pcommit_latency in PCOMMIT_LATENCIES:
-                
+
                 # RUN EXPERIMENT
                 run_experiment(LOGGING,
                                EXPERIMENT_TYPE_THROUGHPUT,
@@ -1325,7 +1325,7 @@ def flush_mode_eval():
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
         for nvm_logging_type in NVM_LOGGING_TYPES:
             for flush_mode in FLUSH_MODES:
-                
+
                 # RUN EXPERIMENT
                 run_experiment(LOGGING,
                                EXPERIMENT_TYPE_THROUGHPUT,
@@ -1352,7 +1352,7 @@ def asynchronous_mode_eval():
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
         for nvm_logging_type in NVM_LOGGING_TYPES:
             for asynchronous_mode in ASYNCHRONOUS_MODES:
-                
+
                 # RUN EXPERIMENT
                 run_experiment(LOGGING,
                                EXPERIMENT_TYPE_THROUGHPUT,
@@ -1374,12 +1374,12 @@ def asynchronous_mode_eval():
 ###################################################################################
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(prog="log", 
+    parser = argparse.ArgumentParser(prog="log",
                                      description='Run Write Behind Logging Experiments',
                                      formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=50))
 
     parser.add_argument("-z", "--enable-sdv", help='enable sdv', action='store_true')
-    
+
     parser.add_argument("-a", "--ycsb_throughput_eval", help='eval ycsb_throughput', action='store_true')
     parser.add_argument("-b", "--tpcc_throughput_eval", help='eval tpcc_throughput', action='store_true')
     parser.add_argument("-c", "--ycsb_recovery_eval", help='eval ycsb_recovery', action='store_true')
