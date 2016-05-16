@@ -49,13 +49,8 @@ OPT_GRAPH_HEIGHT = 300
 OPT_GRAPH_WIDTH = 400
 
 # http://colrd.com/palette/19308/
-COLOR_MAP = ('#51574a', '#447c69', '#74c493',
-             '#8e8c6d', '#e4bf80', '#e9d78e',
-             '#e2975d', '#f19670', '#e16552',
-             '#c94a53', '#be5168', '#a34974',
-             '#993767', '#65387d', '#4e2472',
-             '#9163b6', '#e279a3', '#e0598b',
-             '#7c9fb0', '#5698c4', '#9abf88')
+COLOR_MAP = ('#447c69', '#74c493', '#e279a3', '#c94a53', 
+             '#9163b6', '#4e2472', '#8e8c6d', '#51574a')
 
 OPT_COLORS = COLOR_MAP
 
@@ -1485,5 +1480,5 @@ if __name__ == '__main__':
     if args.asynchronous_mode_plot:
         asynchronous_mode_plot()
 
-    #create_legend_logging_types()
+    create_legend_logging_types()
     #create_legend_storage()
