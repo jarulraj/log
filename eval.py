@@ -115,11 +115,11 @@ INVALID_PCOMMIT_LATENCY = 0
 OUTPUT_FILE = "outputfile.summary"
 
 # Refer LoggingType in common/types.h
-LOGGING_TYPES = (1, 2, 3, 4, 5, 6)
-LOGGING_NAMES = ("nvm_wal", "ssd_wal", "hdd_wal", "nvm_wbl", "ssd_wbl", "hdd_wbl")
+LOGGING_TYPES = (4, 5, 6, 1, 2, 3)
+LOGGING_NAMES = ("nvm_wbl", "ssd_wbl", "hdd_wbl", "nvm_wal", "ssd_wal", "hdd_wal")
 
-NVM_LOGGING_TYPES = (1, 4)
-NVM_LOGGING_NAMES = ("nvm_wal", "nvm_wbl")
+NVM_LOGGING_TYPES = (4, 1)
+NVM_LOGGING_NAMES = ("nvm_wbl", "nvm_wal")
 
 SCALE_FACTOR = 1
 DATABASE_FILE_SIZE = 4096  # DATABASE FILE SIZE (MB)
@@ -134,8 +134,8 @@ TPCC_BENCHMARK_TYPE = 2
 
 RECOVERY_DURATIONS = (500, 5000, 50000)
 
-YCSB_UPDATE_RATIOS = (0, 0.1, 0.5, 0.9)
-YCSB_UPDATE_NAMES = ("read-only", "read-heavy", "balanced", "write-heavy")
+YCSB_UPDATE_RATIOS = (0.1, 0.5, 0.9)
+YCSB_UPDATE_NAMES = ("read-heavy", "balanced", "write-heavy")
 INVALID_UPDATE_RATIO = 0
 
 FLUSH_MODES = ("1", "2")
@@ -367,10 +367,11 @@ def create_ycsb_throughput_line_chart(datasets):
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+    #ax1.set_yscale('log', nonposy='clip')
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("Number of Clients", fontproperties=LABEL_FP)
+    ax1.set_xlabel("Number of Backends", fontproperties=LABEL_FP)
     ax1.set_xticklabels(x_labels)
     ax1.set_xlim([0.25, N - 0.25])
 
@@ -480,34 +481,33 @@ def create_ycsb_storage_bar_chart(datasets):
 
     return (fig)
 
-def create_ycsb_latency_line_chart(datasets):
+def create_ycsb_latency_bar_chart(datasets):
     fig = plot.figure()
     ax1 = fig.add_subplot(111)
 
     # X-AXIS
     x_labels = [str(i) for i in CLIENT_COUNTS]
     N = len(x_labels)
+    M = len(LOGGING_NAMES)
     ind = np.arange(N)
+    margin = 0.05
+    width = (1.0 - 2 * margin) / M
+    bars = [None] * M * N
 
-    idx = 0
     for group in xrange(len(datasets)):
         # GROUP
         group_data = []
 
         for line in  xrange(len(datasets[group])):
-            for col in  xrange(len(datasets[group][line])):
+            for col in xrange(len(datasets[group][line])):
                 if col == 1:
                     group_data.append(datasets[group][line][col] * 1000) # ms
 
         LOG.info("group_data = %s", str(group_data))
 
-        ax1.plot(ind + 0.5, group_data,
-                 color=OPT_LINE_COLORS[idx],
-                 linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE,
-                 label=str(group))
-
-        idx = idx + 1
-
+        bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
+                              color=OPT_COLORS[group],
+                              linewidth=BAR_LINEWIDTH)
 
     # GRID
     makeGrid(ax1)
@@ -516,13 +516,13 @@ def create_ycsb_latency_line_chart(datasets):
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Latency (ms)", fontproperties=LABEL_FP)
+    ax1.set_yscale('log', nonposy='clip')
 
     # X-AXIS
-    ax1.set_xticks(ind + 0.5)
+    ax1.set_xticks(ind + margin + 0.5)
     ax1.set_xlabel("Number of Clients", fontproperties=LABEL_FP)
     ax1.set_xticklabels(x_labels)
-    ax1.set_xlim([0.25, N - 0.25])
-
+    
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
     for label in ax1.get_xticklabels() :
@@ -752,7 +752,7 @@ def ycsb_throughput_plot():
 
         fileName = "ycsb-" + "throughput-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 # TPCC THROUGHPUT -- PLOT
 def tpcc_throughput_plot():
@@ -772,7 +772,7 @@ def tpcc_throughput_plot():
 
     fileName = "tpcc-" + "throughput" + ".pdf"
 
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 # YCSB RECOVERY -- PLOT
 def ycsb_recovery_plot():
@@ -792,7 +792,7 @@ def ycsb_recovery_plot():
 
     fileName = "ycsb-" + "recovery" + ".pdf"
 
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 # TPCC RECOVERY -- PLOT
 def tpcc_recovery_plot():
@@ -812,7 +812,7 @@ def tpcc_recovery_plot():
 
     fileName = "tpcc-" + "recovery" + ".pdf"
 
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 # YCSB STORAGE -- PLOT
 def ycsb_storage_plot():
@@ -858,11 +858,11 @@ def ycsb_latency_plot():
             dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
             datasets.append(dataset)
 
-        fig = create_ycsb_latency_line_chart(datasets)
+        fig = create_ycsb_latency_bar_chart(datasets)
 
         fileName = "ycsb-" + "latency-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 # TPCC LATENCY -- PLOT
 def tpcc_latency_plot():
@@ -878,11 +878,11 @@ def tpcc_latency_plot():
         dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
         datasets.append(dataset)
 
-    fig = create_ycsb_latency_line_chart(datasets)
+    fig = create_ycsb_latency_bar_chart(datasets)
 
     fileName = "tpcc-" + "latency" + ".pdf"
 
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 # NVM LATENCY -- PLOT
 def nvm_latency_plot():
@@ -906,7 +906,7 @@ def nvm_latency_plot():
 
         fileName = "nvm-latency-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 # PCOMMIT LATENCY -- PLOT
 def pcommit_latency_plot():
@@ -930,7 +930,7 @@ def pcommit_latency_plot():
 
         fileName = "pcommit-latency-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 # FLUSH MODE -- PLOT
 def flush_mode_plot():
@@ -954,7 +954,7 @@ def flush_mode_plot():
 
         fileName = "flush-mode-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 # ASYNCHRONOUS MODE -- PLOT
 def asynchronous_mode_plot():
