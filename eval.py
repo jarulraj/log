@@ -490,7 +490,7 @@ def create_ycsb_latency_bar_chart(datasets):
     N = len(x_labels)
     M = len(LOGGING_NAMES)
     ind = np.arange(N)
-    margin = 0.05
+    margin = 0.1
     width = (1.0 - 2 * margin) / M
     bars = [None] * M * N
 
@@ -517,6 +517,7 @@ def create_ycsb_latency_bar_chart(datasets):
     ax1.minorticks_off()
     ax1.set_ylabel("Latency (ms)", fontproperties=LABEL_FP)
     ax1.set_yscale('log', nonposy='clip')
+    ax1.tick_params(axis='y', which='minor', left='off', right='off')
 
     # X-AXIS
     ax1.set_xticks(ind + margin + 0.5)
