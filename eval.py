@@ -143,6 +143,7 @@ INVALID_UPDATE_RATIO = 0
 
 FLUSH_MODES = ("1", "2")
 DEFAULT_FLUSH_MODE = 2
+FLUSH_MODES_NAMES = ("Enabled", "Disabled")
 
 ASYNCHRONOUS_MODES = ("1", "3")
 DEFAULT_ASYNCHRONOUS_MODE = 1
@@ -152,7 +153,7 @@ EXPERIMENT_TYPE_RECOVERY = 2
 EXPERIMENT_TYPE_STORAGE = 3
 EXPERIMENT_TYPE_LATENCY = 4
 
-STORAGE_LOGGING_TYPES = ("WAL-V", "WAL-NV", "WBL-V", "WBL-NV")
+STORAGE_LOGGING_TYPES = ("WBL-DRAM", "WBL-NVM", "WAL-DRAM", "WAL-NVM")
 STORAGE_LABELS = ("Table", "Index", "Log", "Checkpoint")
 
 YCSB_THROUGHPUT_DIR = BASE_DIR + "/results/throughput/ycsb/"
@@ -478,7 +479,7 @@ def create_ycsb_storage_bar_chart(datasets):
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
     for label in ax1.get_xticklabels() :
-        label.set_fontproperties(TICK_FP)
+        label.set_fontproperties(LABEL_FP)
 
     return (fig)
 
@@ -686,7 +687,7 @@ def create_asynchronous_mode_bar_chart(datasets):
     # X-AXIS
     x_labels = [str(i) for i in ASYNCHRONOUS_MODES]
     N = len(x_labels)
-    M = len(LOGGING_NAMES)
+    M = len(NVM_LOGGING_NAMES)
     ind = np.arange(N)
     margin = 0.15
     width = ((1.0 - 2 * margin) / M)
@@ -703,8 +704,13 @@ def create_asynchronous_mode_bar_chart(datasets):
 
         LOG.info("group_data = %s", str(group_data))
 
+        color_group = 0        
+        if group == 1:
+            color_group = 3
+        
+
         bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
-                                      color=OPT_COLORS[group],
+                                      color=OPT_COLORS[color_group],
                                       linewidth=BAR_LINEWIDTH)
 
 
@@ -718,8 +724,8 @@ def create_asynchronous_mode_bar_chart(datasets):
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("Asynchronous Mode", fontproperties=LABEL_FP)
-    ax1.set_xticklabels(x_labels)
+    ax1.set_xlabel("Logging Status", fontproperties=LABEL_FP)
+    ax1.set_xticklabels(FLUSH_MODES_NAMES)
 
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
@@ -827,7 +833,7 @@ def ycsb_storage_plot():
 
     fileName = "ycsb-storage.pdf"
 
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH*1.5, height=OPT_GRAPH_HEIGHT/1.5)
 
 # TPCC STORAGE -- PLOT
 def tpcc_storage_plot():
@@ -840,7 +846,7 @@ def tpcc_storage_plot():
 
     fileName = "tpcc-storage.pdf"
 
-    saveGraph(fig, fileName, width=OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+    saveGraph(fig, fileName, width=OPT_GRAPH_WIDTH*1.5, height=OPT_GRAPH_HEIGHT/1.5)
 
 # YCSB LATENCY -- PLOT
 def ycsb_latency_plot():
@@ -957,7 +963,7 @@ def flush_mode_plot():
         fileName = "flush-mode-" + ycsb_update_name + ".pdf"
 
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
-
+        
 # ASYNCHRONOUS MODE -- PLOT
 def asynchronous_mode_plot():
 
@@ -966,7 +972,7 @@ def asynchronous_mode_plot():
         ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
 
         datasets = []
-        for logging_type in LOGGING_TYPES:
+        for logging_type in NVM_LOGGING_TYPES:
 
             # figure out logging name and ycsb update name
             nvm_logging_name = getLoggingName(logging_type)
@@ -980,7 +986,7 @@ def asynchronous_mode_plot():
 
         fileName = "asynchronous-mode-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT/1.5)
 
 ###################################################################################
 # EVAL HELPERS
