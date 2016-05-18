@@ -144,6 +144,7 @@ INVALID_UPDATE_RATIO = 0
 FLUSH_MODES = ("1", "2")
 DEFAULT_FLUSH_MODE = 2
 
+ASYNCHRONOUS_MODES = ("1", "3")
 DEFAULT_ASYNCHRONOUS_MODE = 1
 
 EXPERIMENT_TYPE_THROUGHPUT = 1
@@ -678,6 +679,55 @@ def create_flush_mode_bar_chart(datasets):
 
     return (fig)
 
+def create_asynchronous_mode_bar_chart(datasets):
+    fig = plot.figure()
+    ax1 = fig.add_subplot(111)
+
+    # X-AXIS
+    x_labels = [str(i) for i in ASYNCHRONOUS_MODES]
+    N = len(x_labels)
+    M = len(NVM_LOGGING_NAMES)
+    ind = np.arange(N)
+    margin = 0.15
+    width = ((1.0 - 2 * margin) / M)
+    bars = [None] * M * N
+
+    for group in xrange(len(datasets)):
+        # GROUP
+        group_data = []
+
+        for line in  xrange(len(datasets[group])):
+            for col in  xrange(len(datasets[group][line])):
+                if col == 1:
+                    group_data.append(datasets[group][line][col])
+
+        LOG.info("group_data = %s", str(group_data))
+
+        bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
+                                      color=OPT_COLORS[group],
+                                      linewidth=BAR_LINEWIDTH)
+
+
+    # GRID
+    makeGrid(ax1)
+
+    # Y-AXIS
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
+    ax1.minorticks_off()
+    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+
+    # X-AXIS
+    ax1.set_xticks(ind + 0.5)
+    ax1.set_xlabel("Asynchronous Mode", fontproperties=LABEL_FP)
+    ax1.set_xticklabels(x_labels)
+
+    for label in ax1.get_yticklabels() :
+        label.set_fontproperties(TICK_FP)
+    for label in ax1.get_xticklabels() :
+        label.set_fontproperties(TICK_FP)
+
+    return (fig)
+
 ###################################################################################
 # PLOT HELPERS
 ###################################################################################
@@ -916,21 +966,21 @@ def asynchronous_mode_plot():
         ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
 
         datasets = []
-        for logging_type in LOGGING_TYPES:
+        for nvm_logging_type in NVM_LOGGING_TYPES:
 
             # figure out logging name and ycsb update name
-            logging_name = getLoggingName(logging_type)
+            nvm_logging_name = getLoggingName(nvm_logging_type)
 
-            data_file = ASYNCHRONOUS_MODE_DIR + "/" + ycsb_update_name + "/" + logging_name + "/" + ASYNCHRONOUS_MODE_CSV
+            data_file = ASYNCHRONOUS_MODE_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + ASYNCHRONOUS_MODE_CSV
 
-            dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
+            dataset = loadDataFile(len(ASYNCHRONOUS_MODES), 2, data_file)
             datasets.append(dataset)
 
-        fig = create_ycsb_throughput_line_chart(datasets)
+        fig = create_asynchronous_mode_bar_chart(datasets)
 
         fileName = "asynchronous-mode-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
 
 ###################################################################################
 # EVAL HELPERS
@@ -1307,24 +1357,23 @@ def flush_mode_eval():
                 # COLLECT STATS
                 collect_stats(FLUSH_MODE_DIR, FLUSH_MODE_CSV, FLUSH_MODE_EXPERIMENT)
 
+
 # ASYNCHRONOUS MODE -- EVAL
 def asynchronous_mode_eval():
 
     # CLEAN UP RESULT DIR
     clean_up_dir(ASYNCHRONOUS_MODE_DIR)
-    
-    asynchronous_mode = "3"
 
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
-        for logging_type in LOGGING_TYPES:
-            for client_count in CLIENT_COUNTS:
+        for nvm_logging_type in NVM_LOGGING_TYPES:
+            for asynchronous_mode in ASYNCHRONOUS_MODES:
 
                 # RUN EXPERIMENT
                 run_experiment(LOGGING,
                                EXPERIMENT_TYPE_THROUGHPUT,
-                               logging_type,
+                               nvm_logging_type,
                                YCSB_BENCHMARK_TYPE,
-                               client_count,
+                               DEFAULT_CLIENT_COUNT,
                                DEFAULT_DURATION,
                                ycsb_update_ratio,
                                DEFAULT_FLUSH_MODE,
