@@ -921,7 +921,7 @@ def asynchronous_mode_plot():
             # figure out logging name and ycsb update name
             logging_name = getLoggingName(logging_type)
 
-            data_file = YCSB_THROUGHPUT_DIR + "/" + ycsb_update_name + "/" + logging_name + "/" + ASYNCHRONOUS_MODE_CSV
+            data_file = ASYNCHRONOUS_MODE_DIR + "/" + ycsb_update_name + "/" + logging_name + "/" + ASYNCHRONOUS_MODE_CSV
 
             dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
             datasets.append(dataset)
