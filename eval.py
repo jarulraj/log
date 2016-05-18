@@ -686,7 +686,7 @@ def create_asynchronous_mode_bar_chart(datasets):
     # X-AXIS
     x_labels = [str(i) for i in ASYNCHRONOUS_MODES]
     N = len(x_labels)
-    M = len(NVM_LOGGING_NAMES)
+    M = len(LOGGING_NAMES)
     ind = np.arange(N)
     margin = 0.15
     width = ((1.0 - 2 * margin) / M)
@@ -966,10 +966,10 @@ def asynchronous_mode_plot():
         ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
 
         datasets = []
-        for nvm_logging_type in NVM_LOGGING_TYPES:
+        for logging_type in LOGGING_TYPES:
 
             # figure out logging name and ycsb update name
-            nvm_logging_name = getLoggingName(nvm_logging_type)
+            nvm_logging_name = getLoggingName(logging_type)
 
             data_file = ASYNCHRONOUS_MODE_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + ASYNCHRONOUS_MODE_CSV
 
@@ -1365,13 +1365,13 @@ def asynchronous_mode_eval():
     clean_up_dir(ASYNCHRONOUS_MODE_DIR)
 
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
-        for nvm_logging_type in NVM_LOGGING_TYPES:
+        for logging_type in LOGGING_TYPES:
             for asynchronous_mode in ASYNCHRONOUS_MODES:
 
                 # RUN EXPERIMENT
                 run_experiment(LOGGING,
                                EXPERIMENT_TYPE_THROUGHPUT,
-                               nvm_logging_type,
+                               logging_type,
                                YCSB_BENCHMARK_TYPE,
                                DEFAULT_CLIENT_COUNT,
                                DEFAULT_DURATION,
