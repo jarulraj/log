@@ -66,7 +66,7 @@ OPT_MARKER_SIZE = 10.0
 DATA_LABELS = []
 
 
-OPT_STACK_COLORS = ('#AFAFAF', '#F15854', '#5DA5DA', '#60BD68',  '#B276B2', '#DECF3F', '#F17CB0', '#B2912F', '#FAA43A')
+OPT_STACK_COLORS = ('#c9b393', '#a9c993', '#93a9c9', '#b393c9', '#B276B2', '#DECF3F', '#F17CB0', '#B2912F', '#FAA43A')
 OPT_LINE_STYLES= ('-', ':', '--', '-.')
 
 # SET FONT
@@ -144,7 +144,6 @@ INVALID_UPDATE_RATIO = 0
 FLUSH_MODES = ("1", "2")
 DEFAULT_FLUSH_MODE = 2
 
-ASYNCHRONOUS_MODES = ("1", "2", "3")
 DEFAULT_ASYNCHRONOUS_MODE = 1
 
 EXPERIMENT_TYPE_THROUGHPUT = 1
@@ -152,8 +151,8 @@ EXPERIMENT_TYPE_RECOVERY = 2
 EXPERIMENT_TYPE_STORAGE = 3
 EXPERIMENT_TYPE_LATENCY = 4
 
-STORAGE_LOGGING_TYPES = ("WAL", "WBL")
-STORAGE_LABELS = ("Table", "Index", "Log", "Checkpoint", "Other")
+STORAGE_LOGGING_TYPES = ("WAL-V", "WAL-NV", "WBL-V", "WBL-NV")
+STORAGE_LABELS = ("Table", "Index", "Log", "Checkpoint")
 
 YCSB_THROUGHPUT_DIR = BASE_DIR + "/results/throughput/ycsb/"
 YCSB_THROUGHPUT_EXPERIMENT = 1
@@ -311,7 +310,7 @@ def create_legend_storage():
     fig = pylab.figure()
     ax1 = fig.add_subplot(111)
 
-    figlegend = pylab.figure(figsize=(10, 0.5))
+    figlegend = pylab.figure(figsize=(8, 0.5))
 
     num_items = 5;
     ind = np.arange(1)
@@ -421,7 +420,7 @@ def create_ycsb_recovery_bar_chart(datasets):
     ax1.minorticks_off()
     ax1.set_ylabel("Recovery Latency (ms)", fontproperties=LABEL_FP)
     ax1.set_yscale('log', nonposy='clip')
-    ax1.set_yticklabels(['0.01', '0.1', '1', '10', '100', '1000'])
+    ax1.tick_params(axis='y', which='minor', left='off', right='off')
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
@@ -449,17 +448,16 @@ def create_ycsb_storage_bar_chart(datasets):
     col_width = width - col_offset
 
     bars = [None] * len(STORAGE_LABELS) * 2
-    YLIMIT = len(STORAGE_LABELS)
 
     datasets = map(list, map(None,*datasets))
 
     # TYPE
     bottom_list = [0] * len(datasets[0])
-    for type in  xrange(len(datasets)):
-        LOG.info("TYPE :: %s", datasets[type])
+    for type in  xrange(1, len(datasets)):
+        LOG.info("TYPE :: %d %s", type, datasets[type])
 
         bars[type] = ax1.bar(ind + margin + col_offset, datasets[type], col_width,
-                             color=OPT_STACK_COLORS[type], linewidth=BAR_LINEWIDTH,
+                             color=OPT_STACK_COLORS[type - 1], linewidth=BAR_LINEWIDTH,
                              bottom = bottom_list)
         bottom_list = map(add, bottom_list, datasets[type])
 
@@ -469,8 +467,7 @@ def create_ycsb_storage_bar_chart(datasets):
 
     # Y-AXIS
     ax1.set_ylabel("Storage (GB)", fontproperties=LABEL_FP)
-    ax1.yaxis.set_major_locator(MaxNLocator(5))
-    axes.set_ylim(0, YLIMIT)
+    ax1.yaxis.set_major_locator(MaxNLocator(4))
 
     # X-AXIS
     ax1.tick_params(axis='x', which='both', top='off', bottom='off')
@@ -526,7 +523,7 @@ def create_ycsb_latency_bar_chart(datasets):
     ax1.set_xticks(ind + margin + 0.5)
     ax1.set_xlabel("Number of Clients", fontproperties=LABEL_FP)
     ax1.set_xticklabels(x_labels)
-    
+
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
     for label in ax1.get_xticklabels() :
@@ -681,55 +678,6 @@ def create_flush_mode_bar_chart(datasets):
 
     return (fig)
 
-def create_asynchronous_mode_bar_chart(datasets):
-    fig = plot.figure()
-    ax1 = fig.add_subplot(111)
-
-    # X-AXIS
-    x_labels = [str(i) for i in ASYNCHRONOUS_MODES]
-    N = len(x_labels)
-    M = len(NVM_LOGGING_NAMES)
-    ind = np.arange(N)
-    margin = 0.15
-    width = ((1.0 - 2 * margin) / M)
-    bars = [None] * M * N
-
-    for group in xrange(len(datasets)):
-        # GROUP
-        group_data = []
-
-        for line in  xrange(len(datasets[group])):
-            for col in  xrange(len(datasets[group][line])):
-                if col == 1:
-                    group_data.append(datasets[group][line][col])
-
-        LOG.info("group_data = %s", str(group_data))
-
-        bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
-                                      color=OPT_COLORS[group],
-                                      linewidth=BAR_LINEWIDTH)
-
-
-    # GRID
-    makeGrid(ax1)
-
-    # Y-AXIS
-    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
-    ax1.minorticks_off()
-    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
-
-    # X-AXIS
-    ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("Asynchronous Mode", fontproperties=LABEL_FP)
-    ax1.set_xticklabels(x_labels)
-
-    for label in ax1.get_yticklabels() :
-        label.set_fontproperties(TICK_FP)
-    for label in ax1.get_xticklabels() :
-        label.set_fontproperties(TICK_FP)
-
-    return (fig)
-
 ###################################################################################
 # PLOT HELPERS
 ###################################################################################
@@ -829,7 +777,7 @@ def ycsb_storage_plot():
 
     fileName = "ycsb-storage.pdf"
 
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/2, height=OPT_GRAPH_HEIGHT/2.0)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
 
 # TPCC STORAGE -- PLOT
 def tpcc_storage_plot():
@@ -842,7 +790,7 @@ def tpcc_storage_plot():
 
     fileName = "tpcc-storage.pdf"
 
-    saveGraph(fig, fileName, width=OPT_GRAPH_WIDTH/2, height=OPT_GRAPH_HEIGHT/2.0)
+    saveGraph(fig, fileName, width=OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
 
 # YCSB LATENCY -- PLOT
 def ycsb_latency_plot():
@@ -968,21 +916,21 @@ def asynchronous_mode_plot():
         ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
 
         datasets = []
-        for nvm_logging_type in NVM_LOGGING_TYPES:
+        for logging_type in LOGGING_TYPES:
 
             # figure out logging name and ycsb update name
-            nvm_logging_name = getLoggingName(nvm_logging_type)
+            logging_name = getLoggingName(logging_type)
 
-            data_file = ASYNCHRONOUS_MODE_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + ASYNCHRONOUS_MODE_CSV
+            data_file = YCSB_THROUGHPUT_DIR + "/" + ycsb_update_name + "/" + logging_name + "/" + ASYNCHRONOUS_MODE_CSV
 
-            dataset = loadDataFile(len(ASYNCHRONOUS_MODES), 2, data_file)
+            dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
             datasets.append(dataset)
 
-        fig = create_asynchronous_mode_bar_chart(datasets)
+        fig = create_ycsb_throughput_line_chart(datasets)
 
         fileName = "asynchronous-mode-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/1.5)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 ###################################################################################
 # EVAL HELPERS
@@ -1359,23 +1307,24 @@ def flush_mode_eval():
                 # COLLECT STATS
                 collect_stats(FLUSH_MODE_DIR, FLUSH_MODE_CSV, FLUSH_MODE_EXPERIMENT)
 
-
 # ASYNCHRONOUS MODE -- EVAL
 def asynchronous_mode_eval():
 
     # CLEAN UP RESULT DIR
     clean_up_dir(ASYNCHRONOUS_MODE_DIR)
+    
+    asynchronous_mode = "3"
 
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
-        for nvm_logging_type in NVM_LOGGING_TYPES:
-            for asynchronous_mode in ASYNCHRONOUS_MODES:
+        for logging_type in LOGGING_TYPES:
+            for client_count in CLIENT_COUNTS:
 
                 # RUN EXPERIMENT
                 run_experiment(LOGGING,
                                EXPERIMENT_TYPE_THROUGHPUT,
-                               nvm_logging_type,
+                               logging_type,
                                YCSB_BENCHMARK_TYPE,
-                               DEFAULT_CLIENT_COUNT,
+                               client_count,
                                DEFAULT_DURATION,
                                ycsb_update_ratio,
                                DEFAULT_FLUSH_MODE,
