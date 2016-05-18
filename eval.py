@@ -111,7 +111,7 @@ INVALID_NVM_LATENCY = 0
 INVALID_TRANSACTION_COUNT = 0
 INVALID_DURATION = 0
 
-PCOMMIT_LATENCIES = ("10", "20")
+PCOMMIT_LATENCIES = ("100", "1000", "10000")
 INVALID_PCOMMIT_LATENCY = 0
 
 OUTPUT_FILE = "outputfile.summary"
@@ -143,10 +143,11 @@ INVALID_UPDATE_RATIO = 0
 
 FLUSH_MODES = ("1", "2")
 DEFAULT_FLUSH_MODE = 2
-FLUSH_MODES_NAMES = ("Enabled", "Disabled")
+FLUSH_MODES_NAMES = ("CLFLUSH", "CLWB")
 
 ASYNCHRONOUS_MODES = ("1", "3")
 DEFAULT_ASYNCHRONOUS_MODE = 1
+ASYNCHRONOUS_MODES_NAMES = ("Enabled", "Disabled")
 
 EXPERIMENT_TYPE_THROUGHPUT = 1
 EXPERIMENT_TYPE_RECOVERY = 2
@@ -725,7 +726,7 @@ def create_asynchronous_mode_bar_chart(datasets):
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
     ax1.set_xlabel("Logging Status", fontproperties=LABEL_FP)
-    ax1.set_xticklabels(FLUSH_MODES_NAMES)
+    ax1.set_xticklabels(ASYNCHRONOUS_MODES_NAMES)
 
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
