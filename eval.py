@@ -134,8 +134,8 @@ DEFAULT_CLIENT_COUNT = 8
 YCSB_BENCHMARK_TYPE = 1
 TPCC_BENCHMARK_TYPE = 2
 
-YCSB_RECOVERY_COUNTS = (100000, 100000)
-TPCC_RECOVERY_COUNTS = (10000, 10000)
+YCSB_RECOVERY_COUNTS = (10000, 100000)
+TPCC_RECOVERY_COUNTS = (1000, 10000)
 
 YCSB_UPDATE_RATIOS = (0.1, 0.5, 0.9)
 YCSB_UPDATE_NAMES = ("read-heavy", "balanced", "write-heavy")
@@ -1174,7 +1174,7 @@ def ycsb_recovery_eval():
     # CLEAN UP RESULT DIR
     clean_up_dir(YCSB_RECOVERY_DIR)
 
-    client_count = 1
+    client_count = 8
     ycsb_recovery_update_ratio = 1
 
     for recovery_transaction_count in YCSB_RECOVERY_COUNTS:
@@ -1203,7 +1203,7 @@ def tpcc_recovery_eval():
     # CLEAN UP RESULT DIR
     clean_up_dir(TPCC_RECOVERY_DIR)
 
-    client_count = 1
+    client_count = 8
 
     for recovery_transaction_count in TPCC_RECOVERY_COUNTS:
             for logging_type in LOGGING_TYPES:
