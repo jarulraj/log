@@ -108,6 +108,8 @@ ENABLE_SDV = False
 NVM_LATENCIES = ("160", "320")
 DEFAULT_NVM_LATENCY = NVM_LATENCIES[0]
 INVALID_NVM_LATENCY = 0
+INVALID_TRANSACTION_COUNT = 0
+INVALID_DURATION = 0
 
 PCOMMIT_LATENCIES = ("10", "20")
 INVALID_PCOMMIT_LATENCY = 0
@@ -115,16 +117,16 @@ INVALID_PCOMMIT_LATENCY = 0
 OUTPUT_FILE = "outputfile.summary"
 
 # Refer LoggingType in common/types.h
-LOGGING_TYPES = (4, 5, 6, 1, 2, 3)
-LOGGING_NAMES = ("nvm_wbl", "ssd_wbl", "hdd_wbl", "nvm_wal", "ssd_wal", "hdd_wal")
+LOGGING_TYPES = (1, 2, 3, 4, 5, 6)
+LOGGING_NAMES = ("nvm-wbl", "ssd-wbl", "hdd-wbl", "nvm-wal", "ssd-wal", "hdd-wal")
 
-NVM_LOGGING_TYPES = (4, 1)
-NVM_LOGGING_NAMES = ("nvm_wbl", "nvm_wal")
+NVM_LOGGING_TYPES = (1, 4)
+NVM_LOGGING_NAMES = ("nvm-wbl", "nvm-wal")
 
 SCALE_FACTOR = 1
 DATABASE_FILE_SIZE = 4096  # DATABASE FILE SIZE (MB)
 
-DURATION = 1000
+DEFAULT_DURATION = 1000
 
 CLIENT_COUNTS = (1, 2, 4, 8)
 DEFAULT_CLIENT_COUNT = 8
@@ -132,7 +134,8 @@ DEFAULT_CLIENT_COUNT = 8
 YCSB_BENCHMARK_TYPE = 1
 TPCC_BENCHMARK_TYPE = 2
 
-RECOVERY_DURATIONS = (500, 5000, 50000)
+YCSB_RECOVERY_COUNTS = (100000, 100000)
+TPCC_RECOVERY_COUNTS = (10000, 10000)
 
 YCSB_UPDATE_RATIOS = (0.1, 0.5, 0.9)
 YCSB_UPDATE_NAMES = ("read-heavy", "balanced", "write-heavy")
@@ -387,7 +390,7 @@ def create_ycsb_recovery_bar_chart(datasets):
     ax1 = fig.add_subplot(111)
 
     # X-AXIS
-    x_labels = [str(i) for i in RECOVERY_DURATIONS]
+    x_labels = [str(i) for i in YCSB_RECOVERY_COUNTS]
     N = len(x_labels)
     M = len(LOGGING_NAMES)
     ind = np.arange(N)
@@ -786,7 +789,7 @@ def ycsb_recovery_plot():
 
         data_file = YCSB_RECOVERY_DIR + "/" + logging_name + "/" + YCSB_RECOVERY_CSV
 
-        dataset = loadDataFile(len(RECOVERY_DURATIONS), 2, data_file)
+        dataset = loadDataFile(len(YCSB_RECOVERY_COUNTS), 2, data_file)
         datasets.append(dataset)
 
     fig = create_ycsb_recovery_bar_chart(datasets)
@@ -806,7 +809,7 @@ def tpcc_recovery_plot():
 
         data_file = TPCC_RECOVERY_DIR + "/" + logging_name + "/" + TPCC_RECOVERY_CSV
 
-        dataset = loadDataFile(len(RECOVERY_DURATIONS), 2, data_file)
+        dataset = loadDataFile(len(TPCC_RECOVERY_COUNTS), 2, data_file)
         datasets.append(dataset)
 
     fig = create_ycsb_recovery_bar_chart(datasets)
@@ -1003,7 +1006,8 @@ def run_experiment(program,
                    flush_mode,
                    nvm_latency,
                    pcommit_latency,
-                   asynchronous_mode):
+                   asynchronous_mode,
+                   transaction_count):
 
     # cleanup
     subprocess.call(["rm -f " + OUTPUT_FILE], shell=True)
@@ -1020,7 +1024,8 @@ def run_experiment(program,
                      "-v", str(flush_mode),
                      "-n", str(nvm_latency),
                      "-p", str(pcommit_latency),
-                     "-a", str(asynchronous_mode)])
+                     "-a", str(asynchronous_mode),
+                     "-t", str(transaction_count)])
 
 
 # COLLECT STATS
@@ -1126,12 +1131,13 @@ def ycsb_throughput_eval():
                                logging_type,
                                YCSB_BENCHMARK_TYPE,
                                client_count,
-                               DURATION,
+                               DEFAULT_DURATION,
                                ycsb_update_ratio,
                                DEFAULT_FLUSH_MODE,
                                INVALID_NVM_LATENCY,
                                INVALID_PCOMMIT_LATENCY,
-                               DEFAULT_ASYNCHRONOUS_MODE)
+                               DEFAULT_ASYNCHRONOUS_MODE,
+                               INVALID_TRANSACTION_COUNT)
 
                 # COLLECT STATS
                 collect_stats(YCSB_THROUGHPUT_DIR, YCSB_THROUGHPUT_CSV, YCSB_THROUGHPUT_EXPERIMENT)
@@ -1151,12 +1157,13 @@ def tpcc_throughput_eval():
                            logging_type,
                            TPCC_BENCHMARK_TYPE,
                            client_count,
-                           DURATION,
+                           DEFAULT_DURATION,
                            INVALID_UPDATE_RATIO,
                            DEFAULT_FLUSH_MODE,
                            INVALID_NVM_LATENCY,
                            INVALID_PCOMMIT_LATENCY,
-                           DEFAULT_ASYNCHRONOUS_MODE)
+                           DEFAULT_ASYNCHRONOUS_MODE,
+                           INVALID_TRANSACTION_COUNT)
 
             # COLLECT STATS
             collect_stats(TPCC_THROUGHPUT_DIR, TPCC_THROUGHPUT_CSV, TPCC_THROUGHPUT_EXPERIMENT)
@@ -1170,7 +1177,7 @@ def ycsb_recovery_eval():
     client_count = 1
     ycsb_recovery_update_ratio = 1
 
-    for recovery_transaction_count in RECOVERY_DURATIONS:
+    for recovery_transaction_count in YCSB_RECOVERY_COUNTS:
             for logging_type in LOGGING_TYPES:
 
                 # RUN EXPERIMENT
@@ -1179,12 +1186,13 @@ def ycsb_recovery_eval():
                                logging_type,
                                YCSB_BENCHMARK_TYPE,
                                client_count,
-                               recovery_transaction_count,
+                               INVALID_DURATION,
                                ycsb_recovery_update_ratio,
                                DEFAULT_FLUSH_MODE,
                                INVALID_NVM_LATENCY,
                                INVALID_PCOMMIT_LATENCY,
-                               DEFAULT_ASYNCHRONOUS_MODE)
+                               DEFAULT_ASYNCHRONOUS_MODE,
+                               recovery_transaction_count)
 
                 # COLLECT STATS
                 collect_stats(YCSB_RECOVERY_DIR, YCSB_RECOVERY_CSV, YCSB_RECOVERY_EXPERIMENT)
@@ -1197,7 +1205,7 @@ def tpcc_recovery_eval():
 
     client_count = 1
 
-    for recovery_transaction_count in RECOVERY_DURATIONS:
+    for recovery_transaction_count in TPCC_RECOVERY_COUNTS:
             for logging_type in LOGGING_TYPES:
 
                 # RUN EXPERIMENT
@@ -1206,12 +1214,13 @@ def tpcc_recovery_eval():
                                logging_type,
                                TPCC_BENCHMARK_TYPE,
                                client_count,
-                               recovery_transaction_count,
+                               INVALID_DURATION,
                                INVALID_UPDATE_RATIO,
                                DEFAULT_FLUSH_MODE,
                                INVALID_NVM_LATENCY,
                                INVALID_PCOMMIT_LATENCY,
-                               DEFAULT_ASYNCHRONOUS_MODE)
+                               DEFAULT_ASYNCHRONOUS_MODE,
+                               recovery_transaction_count)
 
                 # COLLECT STATS
                 collect_stats(TPCC_RECOVERY_DIR, TPCC_RECOVERY_CSV, TPCC_RECOVERY_EXPERIMENT)
@@ -1232,12 +1241,13 @@ def ycsb_latency_eval():
                                logging_type,
                                YCSB_BENCHMARK_TYPE,
                                client_count,
-                               DURATION,
+                               DEFAULT_DURATION,
                                ycsb_update_ratio,
                                DEFAULT_FLUSH_MODE,
                                INVALID_NVM_LATENCY,
                                INVALID_PCOMMIT_LATENCY,
-                               DEFAULT_ASYNCHRONOUS_MODE)
+                               DEFAULT_ASYNCHRONOUS_MODE,
+                               INVALID_TRANSACTION_COUNT)
 
                 # COLLECT STATS
                 collect_stats(YCSB_LATENCY_DIR, YCSB_LATENCY_CSV, YCSB_LATENCY_EXPERIMENT)
@@ -1257,12 +1267,13 @@ def tpcc_latency_eval():
                            logging_type,
                            TPCC_BENCHMARK_TYPE,
                            client_count,
-                           DURATION,
+                           DEFAULT_DURATION,
                            INVALID_UPDATE_RATIO,
                            DEFAULT_FLUSH_MODE,
                            INVALID_NVM_LATENCY,
                            INVALID_PCOMMIT_LATENCY,
-                           DEFAULT_ASYNCHRONOUS_MODE)
+                           DEFAULT_ASYNCHRONOUS_MODE,
+                           INVALID_TRANSACTION_COUNT)
 
             # COLLECT STATS
             collect_stats(TPCC_LATENCY_DIR, TPCC_LATENCY_CSV, TPCC_LATENCY_EXPERIMENT)
@@ -1283,12 +1294,13 @@ def nvm_latency_eval():
                                nvm_logging_type,
                                YCSB_BENCHMARK_TYPE,
                                DEFAULT_CLIENT_COUNT,
-                               DURATION,
+                               DEFAULT_DURATION,
                                ycsb_update_ratio,
                                DEFAULT_FLUSH_MODE,
                                nvm_latency,
                                INVALID_PCOMMIT_LATENCY,
-                               DEFAULT_ASYNCHRONOUS_MODE)
+                               DEFAULT_ASYNCHRONOUS_MODE,
+                               INVALID_TRANSACTION_COUNT)
 
                 # COLLECT STATS
                 collect_stats(NVM_LATENCY_DIR, NVM_LATENCY_CSV, NVM_LATENCY_EXPERIMENT)
@@ -1309,12 +1321,13 @@ def pcommit_latency_eval():
                                nvm_logging_type,
                                YCSB_BENCHMARK_TYPE,
                                DEFAULT_CLIENT_COUNT,
-                               DURATION,
+                               DEFAULT_DURATION,
                                ycsb_update_ratio,
                                DEFAULT_FLUSH_MODE,
                                INVALID_NVM_LATENCY,
                                pcommit_latency,
-                               DEFAULT_ASYNCHRONOUS_MODE)
+                               DEFAULT_ASYNCHRONOUS_MODE,
+                               INVALID_TRANSACTION_COUNT)
 
                 # COLLECT STATS
                 collect_stats(PCOMMIT_LATENCY_DIR, PCOMMIT_LATENCY_CSV, PCOMMIT_LATENCY_EXPERIMENT)
@@ -1335,12 +1348,13 @@ def flush_mode_eval():
                                nvm_logging_type,
                                YCSB_BENCHMARK_TYPE,
                                DEFAULT_CLIENT_COUNT,
-                               DURATION,
+                               DEFAULT_DURATION,
                                ycsb_update_ratio,
                                flush_mode,
                                INVALID_NVM_LATENCY,
                                INVALID_PCOMMIT_LATENCY,
-                               DEFAULT_ASYNCHRONOUS_MODE)
+                               DEFAULT_ASYNCHRONOUS_MODE,
+                               INVALID_TRANSACTION_COUNT)
 
                 # COLLECT STATS
                 collect_stats(FLUSH_MODE_DIR, FLUSH_MODE_CSV, FLUSH_MODE_EXPERIMENT)
@@ -1362,12 +1376,13 @@ def asynchronous_mode_eval():
                                nvm_logging_type,
                                YCSB_BENCHMARK_TYPE,
                                DEFAULT_CLIENT_COUNT,
-                               DURATION,
+                               DEFAULT_DURATION,
                                ycsb_update_ratio,
                                DEFAULT_FLUSH_MODE,
                                INVALID_NVM_LATENCY,
                                INVALID_PCOMMIT_LATENCY,
-                               asynchronous_mode)
+                               asynchronous_mode,
+                               INVALID_TRANSACTION_COUNT)
 
                 # COLLECT STATS
                 collect_stats(ASYNCHRONOUS_MODE_DIR, ASYNCHRONOUS_MODE_CSV, ASYNCHRONOUS_MODE_EXPERIMENT)
