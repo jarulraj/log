@@ -111,7 +111,7 @@ INVALID_NVM_LATENCY = 0
 INVALID_TRANSACTION_COUNT = 0
 INVALID_DURATION = 0
 
-PCOMMIT_LATENCIES = ("0", "10", "1000", "100000")
+PCOMMIT_LATENCIES = ("0", "10", "100", "1000", "10000", "100000")
 INVALID_PCOMMIT_LATENCY = 0
 
 OUTPUT_FILE = "outputfile.summary"
@@ -148,6 +148,8 @@ FLUSH_MODES_NAMES = ("CLFLUSH", "CLWB")
 ASYNCHRONOUS_MODES = ("1", "3")
 DEFAULT_ASYNCHRONOUS_MODE = 1
 ASYNCHRONOUS_MODES_NAMES = ("Enabled", "Disabled")
+
+PCOMMIT_LABELS = ("Current", "10", "1000", "100000")
 
 EXPERIMENT_TYPE_THROUGHPUT = 1
 EXPERIMENT_TYPE_RECOVERY = 2
@@ -335,6 +337,31 @@ def create_legend_storage():
                      handleheight=2, handlelength=3.5)
 
     figlegend.savefig('legend_storage.pdf')
+
+def create_legend_update_ratio():
+    fig = pylab.figure()
+    ax1 = fig.add_subplot(111)
+
+    figlegend = pylab.figure(figsize=(7, 0.5))
+    idx = 0
+    lines = [None] * len(YCSB_UPDATE_NAMES)
+
+    workload_mix = ("Read-Heavy", "Balanced", "Write-Heavy")
+             
+    for group in xrange(len(YCSB_UPDATE_NAMES)):        
+        data = [1]
+        x_values = [1]
+        
+        lines[idx], = ax1.plot(x_values, data, color=OPT_LINE_COLORS[idx], linewidth=OPT_LINE_WIDTH, 
+                 marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, label=str(group))        
+        
+        idx = idx + 1
+                
+    # LEGEND
+    figlegend.legend(lines,  workload_mix, prop=LABEL_FP, loc=1, ncol=4, mode="expand", shadow=OPT_LEGEND_SHADOW, 
+                     frameon=False, borderaxespad=0.0, handleheight=2, handlelength=3.5)
+
+    figlegend.savefig('legend_update_ratio.pdf')
 
 def create_ycsb_throughput_line_chart(datasets):
     fig = plot.figure()
@@ -583,19 +610,16 @@ def create_nvm_latency_bar_chart(datasets):
 
     return (fig)
 
-def create_pcommit_latency_bar_chart(datasets):
+def create_pcommit_latency_line_chart(datasets):
     fig = plot.figure()
     ax1 = fig.add_subplot(111)
 
     # X-AXIS
     x_labels = [str(i) for i in PCOMMIT_LATENCIES]
     N = len(x_labels)
-    M = len(NVM_LOGGING_NAMES)
     ind = np.arange(N)
-    margin = 0.15
-    width = ((1.0 - 2 * margin) / M)
-    bars = [None] * M * N
 
+    idx = 0
     for group in xrange(len(datasets)):
         # GROUP
         group_data = []
@@ -607,13 +631,12 @@ def create_pcommit_latency_bar_chart(datasets):
 
         LOG.info("group_data = %s", str(group_data))
 
-        color_group = 0        
-        if group == 1:
-            color_group = 3
+        ax1.plot(ind + 0.5, group_data,
+                 color=OPT_LINE_COLORS[idx],
+                 linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE,
+                 label=str(group))
 
-        bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
-                                      color=OPT_COLORS[color_group],
-                                      linewidth=BAR_LINEWIDTH)
+        idx = idx + 1
 
 
     # GRID
@@ -627,7 +650,8 @@ def create_pcommit_latency_bar_chart(datasets):
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
     ax1.set_xlabel("PCOMMIT Latency", fontproperties=LABEL_FP)
-    ax1.set_xticklabels(x_labels)
+    ax1.set_xticklabels(PCOMMIT_LABELS)
+    ax1.set_xlim([0.25, 3.75])
 
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
@@ -927,26 +951,26 @@ def nvm_latency_plot():
 # PCOMMIT LATENCY -- PLOT
 def pcommit_latency_plot():
 
+    datasets = []
+    nvm_wbl_logging_type = 1
+
+    # figure out logging name and ycsb update name
+    nvm_logging_name = getLoggingName(nvm_wbl_logging_type)
+
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
 
         ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
 
-        datasets = []
-        for nvm_logging_type in NVM_LOGGING_TYPES:
+        data_file = PCOMMIT_LATENCY_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + PCOMMIT_LATENCY_CSV
 
-            # figure out logging name and ycsb update name
-            nvm_logging_name = getLoggingName(nvm_logging_type)
+        dataset = loadDataFile(len(PCOMMIT_LATENCIES), 2, data_file)
+        datasets.append(dataset)
 
-            data_file = PCOMMIT_LATENCY_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + PCOMMIT_LATENCY_CSV
+    fig = create_pcommit_latency_line_chart(datasets)
 
-            dataset = loadDataFile(len(PCOMMIT_LATENCIES), 2, data_file)
-            datasets.append(dataset)
+    fileName = "pcommit-latency.pdf"
 
-        fig = create_pcommit_latency_bar_chart(datasets)
-
-        fileName = "pcommit-latency-" + ycsb_update_name + ".pdf"
-
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 # FLUSH MODE -- PLOT
 def flush_mode_plot():
@@ -1323,14 +1347,15 @@ def pcommit_latency_eval():
     # CLEAN UP RESULT DIR
     clean_up_dir(PCOMMIT_LATENCY_DIR)
 
+    nvm_wbl_logging_type = 1
+
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
-        for nvm_logging_type in NVM_LOGGING_TYPES:
             for pcommit_latency in PCOMMIT_LATENCIES:
 
                 # RUN EXPERIMENT
                 run_experiment(LOGGING,
                                EXPERIMENT_TYPE_THROUGHPUT,
-                               nvm_logging_type,
+                               nvm_wbl_logging_type,
                                YCSB_BENCHMARK_TYPE,
                                DEFAULT_CLIENT_COUNT,
                                DEFAULT_DURATION,
@@ -1512,3 +1537,4 @@ if __name__ == '__main__':
 
     #create_legend_logging_types()
     #create_legend_storage()
+    create_legend_update_ratio()
