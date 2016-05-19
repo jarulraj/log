@@ -607,8 +607,12 @@ def create_pcommit_latency_bar_chart(datasets):
 
         LOG.info("group_data = %s", str(group_data))
 
+        color_group = 0        
+        if group == 1:
+            color_group = 3
+
         bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
-                                      color=OPT_COLORS[group],
+                                      color=OPT_COLORS[color_group],
                                       linewidth=BAR_LINEWIDTH)
 
 
@@ -656,8 +660,12 @@ def create_flush_mode_bar_chart(datasets):
 
         LOG.info("group_data = %s", str(group_data))
 
+        color_group = 0        
+        if group == 1:
+            color_group = 3
+
         bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
-                                      color=OPT_COLORS[group],
+                                      color=OPT_COLORS[color_group],
                                       linewidth=BAR_LINEWIDTH)
 
 
@@ -671,8 +679,8 @@ def create_flush_mode_bar_chart(datasets):
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("Flush Mode", fontproperties=LABEL_FP)
-    ax1.set_xticklabels(x_labels)
+    ax1.set_xlabel("NVM Flush Mode", fontproperties=LABEL_FP)
+    ax1.set_xticklabels(FLUSH_MODES_NAMES)
 
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
@@ -709,7 +717,6 @@ def create_asynchronous_mode_bar_chart(datasets):
         if group == 1:
             color_group = 3
         
-
         bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
                                       color=OPT_COLORS[color_group],
                                       linewidth=BAR_LINEWIDTH)
@@ -963,7 +970,7 @@ def flush_mode_plot():
 
         fileName = "flush-mode-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT/1.5)
         
 # ASYNCHRONOUS MODE -- PLOT
 def asynchronous_mode_plot():
