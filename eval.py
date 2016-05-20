@@ -1059,24 +1059,38 @@ def run_experiment(program,
 
     # With numactl or not
     if ENABLE_SDV:
-        program_with_prefix = NUMACTL + " " + NUMACTL_FLAGS + " " + program
+        subprocess.call([NUMACTL,
+                         NUMACTL_FLAGS,
+                         program,
+                         "-e", str(experiment_type),
+                         "-l", str(logging_type),
+                         "-k", str(SCALE_FACTOR),
+                         "-f", str(DATABASE_FILE_SIZE),
+                         "-d", str(duration),
+                         "-b", str(client_count),
+                         "-u", str(ycsb_update_ratio),
+                         "-y", str(benchmark_type),
+                         "-v", str(flush_mode),
+                         "-n", str(nvm_latency),
+                         "-p", str(pcommit_latency),
+                         "-a", str(asynchronous_mode),
+                         "-t", str(transaction_count)])        
     else:
-        program_with_prefix = program
+        subprocess.call([program,
+                         "-e", str(experiment_type),
+                         "-l", str(logging_type),
+                         "-k", str(SCALE_FACTOR),
+                         "-f", str(DATABASE_FILE_SIZE),
+                         "-d", str(duration),
+                         "-b", str(client_count),
+                         "-u", str(ycsb_update_ratio),
+                         "-y", str(benchmark_type),
+                         "-v", str(flush_mode),
+                         "-n", str(nvm_latency),
+                         "-p", str(pcommit_latency),
+                         "-a", str(asynchronous_mode),
+                         "-t", str(transaction_count)])
         
-    subprocess.call([program_with_prefix,
-                     "-e", str(experiment_type),
-                     "-l", str(logging_type),
-                     "-k", str(SCALE_FACTOR),
-                     "-f", str(DATABASE_FILE_SIZE),
-                     "-d", str(duration),
-                     "-b", str(client_count),
-                     "-u", str(ycsb_update_ratio),
-                     "-y", str(benchmark_type),
-                     "-v", str(flush_mode),
-                     "-n", str(nvm_latency),
-                     "-p", str(pcommit_latency),
-                     "-a", str(asynchronous_mode),
-                     "-t", str(transaction_count)])
 
 
 # COLLECT STATS
