@@ -64,7 +64,7 @@ OPT_LINE_WIDTH = 6.0
 OPT_MARKER_SIZE = 10.0
 DATA_LABELS = []
 
-OPT_STACK_COLORS = ('#c9b393', '#a9c993', '#93a9c9', '#b393c9', '#B276B2', '#DECF3F', '#F17CB0', '#B2912F', '#FAA43A')
+OPT_STACK_COLORS = ('#685050', '#FFF4C1', '#597463', '#444F51', '#1F071D')
 OPT_LINE_STYLES= ('-', ':', '--', '-.')
 
 # SET FONT
@@ -335,8 +335,7 @@ def create_legend_storage():
         data = [1]
         bars[group] = ax1.bar(ind + margin + (group * width), data, width,
                               color=OPT_STACK_COLORS[group], 
-                              linewidth=BAR_LINEWIDTH,
-                              hatch=OPT_PATTERNS[group])
+                              linewidth=BAR_LINEWIDTH)
 
     # LEGEND
     figlegend.legend(bars, STORAGE_LABELS, prop=LABEL_FP,
@@ -611,7 +610,7 @@ def create_nvm_latency_line_chart(datasets):
     makeGrid(ax1)
 
     # Y-AXIS
-    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS + 2))
     ax1.minorticks_off()
     ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
 
@@ -715,7 +714,7 @@ def create_flush_mode_bar_chart(datasets):
     makeGrid(ax1)
 
     # Y-AXIS
-    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS + 2))
     ax1.minorticks_off()
     ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
 
@@ -769,7 +768,7 @@ def create_asynchronous_mode_bar_chart(datasets):
     makeGrid(ax1)
 
     # Y-AXIS
-    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS + 2))
     ax1.minorticks_off()
     ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
 
@@ -965,7 +964,7 @@ def nvm_latency_plot():
 
         fileName = "nvm-latency-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT/2.0)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
 
 # PCOMMIT LATENCY -- PLOT
 def pcommit_latency_plot():
@@ -989,7 +988,7 @@ def pcommit_latency_plot():
 
     fileName = "pcommit-latency.pdf"
 
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH*1.5, height=OPT_GRAPH_HEIGHT/2.0)
 
 # FLUSH MODE -- PLOT
 def flush_mode_plot():
@@ -1013,7 +1012,7 @@ def flush_mode_plot():
 
         fileName = "flush-mode-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT/1.5)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
         
 # ASYNCHRONOUS MODE -- PLOT
 def asynchronous_mode_plot():
@@ -1037,7 +1036,7 @@ def asynchronous_mode_plot():
 
         fileName = "asynchronous-mode-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT/1.5)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
 
 ###################################################################################
 # EVAL HELPERS
@@ -1584,5 +1583,5 @@ if __name__ == '__main__':
         asynchronous_mode_plot()
 
     #create_legend_logging_types()
-    #create_legend_storage()
+    create_legend_storage()
     #create_legend_update_ratio()
