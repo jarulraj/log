@@ -49,22 +49,20 @@ OPT_GRAPH_HEIGHT = 300
 OPT_GRAPH_WIDTH = 400
 
 # http://colrd.com/palette/19308/
-COLOR_MAP = ('#50b577', '#c94a53', '#7750b5',
-             '#c6c5b4', '#e279a3', '#b4b5c6')
+COLOR_MAP = ('#9EC9E9', '#80CA86', '#F58A87', "#5DA5DA", "#66A26B", "#F15854")
 
 OPT_COLORS = COLOR_MAP
 
 OPT_GRID_COLOR = 'gray'
 OPT_LEGEND_SHADOW = False
 OPT_MARKERS = (['o', 's', 'v', "^", "h", "v", ">", "x", "d", "<", "|", "", "|", "_"])
-OPT_PATTERNS = ([ "////", "////", "o", "o", "\\\\" , "\\\\" , "//////", "//////", ".", "." , "\\\\\\" , "\\\\\\" ])
+OPT_PATTERNS = ([ "////", "o", "\\\\", "////", "o", "\\\\", "//////", "." , "\\\\\\"])
 
 OPT_LABEL_WEIGHT = 'bold'
-OPT_LINE_COLORS = COLOR_MAP
+OPT_LINE_COLORS = ('#fdc086', '#b3e2cd', '#fc8d62', '#a6cee3', '#e41a1c')
 OPT_LINE_WIDTH = 6.0
 OPT_MARKER_SIZE = 10.0
 DATA_LABELS = []
-
 
 OPT_STACK_COLORS = ('#c9b393', '#a9c993', '#93a9c9', '#b393c9', '#B276B2', '#DECF3F', '#F17CB0', '#B2912F', '#FAA43A')
 OPT_LINE_STYLES= ('-', ':', '--', '-.')
@@ -105,13 +103,20 @@ SDV_DIR = "/data/devel/sdv-tools/sdv-release"
 SDV_SCRIPT = SDV_DIR + "/ivt_pm_sdv.sh"
 ENABLE_SDV = False
 
-NVM_LATENCIES = ("160", "320")
+NUMACTL = "numactl"
+NUMACTL_FLAGS = "--membind=2"
+
+PERF_LOCAL = "/usr/bin/perf"
+PERF = "/usr/lib/linux-tools/3.11.0-12-generic/perf"
+
+NVM_LATENCIES = ("160", "320", "640")
 DEFAULT_NVM_LATENCY = NVM_LATENCIES[0]
 INVALID_NVM_LATENCY = 0
 INVALID_TRANSACTION_COUNT = 0
 INVALID_DURATION = 0
 
 PCOMMIT_LATENCIES = ("0", "10", "100", "1000", "10000", "100000")
+PCOMMIT_LABELS = ("Current", "10", "100", "1000", "10000", "100000")
 INVALID_PCOMMIT_LATENCY = 0
 
 OUTPUT_FILE = "outputfile.summary"
@@ -148,8 +153,6 @@ FLUSH_MODES_NAMES = ("CLFLUSH", "CLWB")
 ASYNCHRONOUS_MODES = ("1", "3")
 DEFAULT_ASYNCHRONOUS_MODE = 1
 ASYNCHRONOUS_MODES_NAMES = ("Enabled", "Disabled")
-
-PCOMMIT_LABELS = ("Current", "10", "1000", "100000")
 
 EXPERIMENT_TYPE_THROUGHPUT = 1
 EXPERIMENT_TYPE_RECOVERY = 2
@@ -216,8 +219,8 @@ def chunks(l, n):
         yield l[i:i + n]
 
 def loadDataFile(n_rows, n_cols, path):
-    file = open(path, "r")
-    reader = csv.reader(file)
+    data_file = open(path, "r")
+    reader = csv.reader(data_file)
 
     data = [[0 for x in xrange(n_cols)] for y in xrange(n_rows)]
 
@@ -297,7 +300,8 @@ def create_legend_logging_types():
     for group in xrange(len(LOGGING_NAMES)):
         bars[idx] = ax1.bar(ind + margin + ((idx + 1) * width), data, width,
                             color=OPT_COLORS[idx],
-                            linewidth=BAR_LINEWIDTH)
+                            linewidth=BAR_LINEWIDTH,
+                            hatch=OPT_PATTERNS[group])
         idx = idx + 1
 
     LOGGING_NAMES_UPPER_CASE = [x.upper() for x in LOGGING_NAMES]
@@ -327,7 +331,9 @@ def create_legend_storage():
     for group in xrange(len(STORAGE_LABELS)):
         data = [1]
         bars[group] = ax1.bar(ind + margin + (group * width), data, width,
-                              color=OPT_STACK_COLORS[group], linewidth=BAR_LINEWIDTH)
+                              color=OPT_STACK_COLORS[group], 
+                              linewidth=BAR_LINEWIDTH,
+                              hatch=OPT_PATTERNS[group])
 
     # LEGEND
     figlegend.legend(bars, STORAGE_LABELS, prop=LABEL_FP,
@@ -385,7 +391,7 @@ def create_ycsb_throughput_line_chart(datasets):
         LOG.info("group_data = %s", str(group_data))
 
         ax1.plot(ind + 0.5, group_data,
-                 color=OPT_LINE_COLORS[idx],
+                 color=OPT_COLORS[idx],
                  linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE,
                  label=str(group))
 
@@ -440,7 +446,8 @@ def create_ycsb_recovery_bar_chart(datasets):
 
         bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
                                       color=OPT_COLORS[group],
-                                      linewidth=BAR_LINEWIDTH)
+                                      linewidth=BAR_LINEWIDTH,
+                                      hatch=OPT_PATTERNS[group])
 
     # GRID
     makeGrid(ax1)
@@ -492,7 +499,6 @@ def create_ycsb_storage_bar_chart(datasets):
         bottom_list = map(add, bottom_list, datasets[type])
 
     # GRID
-    axes = ax1.get_axes()
     makeGrid(ax1)
 
     # Y-AXIS
@@ -537,7 +543,8 @@ def create_ycsb_latency_bar_chart(datasets):
 
         bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
                               color=OPT_COLORS[group],
-                              linewidth=BAR_LINEWIDTH)
+                              linewidth=BAR_LINEWIDTH,
+                              hatch=OPT_PATTERNS[group])
 
     # GRID
     makeGrid(ax1)
@@ -587,7 +594,8 @@ def create_nvm_latency_bar_chart(datasets):
 
         bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
                                       color=OPT_COLORS[group],
-                                      linewidth=BAR_LINEWIDTH)
+                                      linewidth=BAR_LINEWIDTH,
+                                      hatch=OPT_PATTERNS[group])
 
 
     # GRID
@@ -649,9 +657,8 @@ def create_pcommit_latency_line_chart(datasets):
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("PCOMMIT Latency", fontproperties=LABEL_FP)
+    ax1.set_xlabel("PCOMMIT Latency (ns)", fontproperties=LABEL_FP)
     ax1.set_xticklabels(PCOMMIT_LABELS)
-    ax1.set_xlim([0.25, 3.75])
 
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
@@ -690,7 +697,8 @@ def create_flush_mode_bar_chart(datasets):
 
         bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
                                       color=OPT_COLORS[color_group],
-                                      linewidth=BAR_LINEWIDTH)
+                                      linewidth=BAR_LINEWIDTH,
+                                      hatch=OPT_PATTERNS[group])
 
 
     # GRID
@@ -743,7 +751,8 @@ def create_asynchronous_mode_bar_chart(datasets):
         
         bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
                                       color=OPT_COLORS[color_group],
-                                      linewidth=BAR_LINEWIDTH)
+                                      linewidth=BAR_LINEWIDTH,
+                                      hatch=OPT_PATTERNS[group])
 
 
     # GRID
@@ -1048,7 +1057,13 @@ def run_experiment(program,
     # cleanup
     subprocess.call(["rm -f " + OUTPUT_FILE], shell=True)
 
-    subprocess.call([program,
+    # With numactl or not
+    if ENABLE_SDV:
+        program_with_prefix = NUMACTL + " " + NUMACTL_FLAGS + " " + program
+    else:
+        program_with_prefix = program
+        
+    subprocess.call([program_with_prefix,
                      "-e", str(experiment_type),
                      "-l", str(logging_type),
                      "-k", str(SCALE_FACTOR),
@@ -1320,9 +1335,13 @@ def nvm_latency_eval():
     # CLEAN UP RESULT DIR
     clean_up_dir(NVM_LATENCY_DIR)
 
-    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
-        for nvm_logging_type in NVM_LOGGING_TYPES:
-            for nvm_latency in NVM_LATENCIES:
+    for nvm_latency in NVM_LATENCIES:
+
+        # SET NVM LATENCY
+        set_nvm_latency(nvm_latency)
+
+        for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+            for nvm_logging_type in NVM_LOGGING_TYPES:
 
                 # RUN EXPERIMENT
                 run_experiment(LOGGING,
@@ -1340,6 +1359,9 @@ def nvm_latency_eval():
 
                 # COLLECT STATS
                 collect_stats(NVM_LATENCY_DIR, NVM_LATENCY_CSV, NVM_LATENCY_EXPERIMENT)
+                
+    # RESET NVM LATENCY
+    reset_nvm_latency()
 
 # PCOMMIT LATENCY -- EVAL
 def pcommit_latency_eval():
