@@ -1167,6 +1167,7 @@ def set_nvm_latency(nvm_latency):
         FNULL = open(os.devnull, 'w')
         cwd = os.getcwd()
         os.chdir(SDV_DIR)
+        LOG.info("Setting nvm latency to : " + str(nvm_latency));
         subprocess.call(['sudo', SDV_SCRIPT, '--enable', '--pm-latency', str(nvm_latency)], stdout=FNULL)
         os.chdir(cwd)
         FNULL.close()
@@ -1176,6 +1177,7 @@ def reset_nvm_latency():
         FNULL = open(os.devnull, 'w')
         cwd = os.getcwd()
         os.chdir(SDV_DIR)
+        LOG.info("Resetting nvm latency to : " + str(DEFAULT_NVM_LATENCY));
         subprocess.call(['sudo', SDV_SCRIPT, '--enable', '--pm-latency', str(DEFAULT_NVM_LATENCY)], stdout=FNULL)
         os.chdir(cwd)
         FNULL.close()
