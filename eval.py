@@ -142,6 +142,8 @@ TPCC_BENCHMARK_TYPE = 2
 
 YCSB_RECOVERY_COUNTS = (10000, 100000)
 TPCC_RECOVERY_COUNTS = (1000, 10000)
+YCSB_RECOVERY_COUNTS_NAMES = ("10000000", "100000000")
+TPCC_RECOVERY_COUNTS_NAMES = ("1000000", "10000000")
 
 YCSB_UPDATE_RATIOS = (0.1, 0.5, 0.9)
 YCSB_UPDATE_NAMES = ("read-heavy", "balanced", "write-heavy")
@@ -421,7 +423,7 @@ def create_ycsb_throughput_line_chart(datasets):
 
     return (fig)
 
-def create_ycsb_recovery_bar_chart(datasets):
+def create_ycsb_recovery_bar_chart(datasets, ycsb):
     fig = plot.figure()
     ax1 = fig.add_subplot(111)
 
@@ -456,15 +458,18 @@ def create_ycsb_recovery_bar_chart(datasets):
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
-    ax1.set_ylabel("Recovery Latency (ms)", fontproperties=LABEL_FP)
+    ax1.set_ylabel("Recovery Latency (s)", fontproperties=LABEL_FP)
     ax1.set_yscale('log', nonposy='clip')
     ax1.tick_params(axis='y', which='minor', left='off', right='off')
 
     # X-AXIS
-    ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("Duration Since Checkpoint (ms)", fontproperties=LABEL_FP)
+    ax1.set_xlabel("Number of Transactions", fontproperties=LABEL_FP)
     ax1.set_xticks(ind + margin + (group * width)/2.0 )
-    ax1.set_xticklabels(x_labels)
+    
+    if ycsb == True:
+        ax1.set_xticklabels(YCSB_RECOVERY_COUNTS_NAMES)
+    else:
+        ax1.set_xticklabels(TPCC_RECOVERY_COUNTS_NAMES)
 
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
@@ -842,7 +847,7 @@ def ycsb_recovery_plot():
         dataset = loadDataFile(len(YCSB_RECOVERY_COUNTS), 2, data_file)
         datasets.append(dataset)
 
-    fig = create_ycsb_recovery_bar_chart(datasets)
+    fig = create_ycsb_recovery_bar_chart(datasets, True)
 
     fileName = "ycsb-" + "recovery" + ".pdf"
 
@@ -862,7 +867,7 @@ def tpcc_recovery_plot():
         dataset = loadDataFile(len(TPCC_RECOVERY_COUNTS), 2, data_file)
         datasets.append(dataset)
 
-    fig = create_ycsb_recovery_bar_chart(datasets)
+    fig = create_ycsb_recovery_bar_chart(datasets, False)
 
     fileName = "tpcc-" + "recovery" + ".pdf"
 
