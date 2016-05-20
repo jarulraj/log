@@ -110,6 +110,7 @@ PERF_LOCAL = "/usr/bin/perf"
 PERF = "/usr/lib/linux-tools/3.11.0-12-generic/perf"
 
 NVM_LATENCIES = ("160", "320", "640")
+NVM_LATENCIES_LABELS = ("1X", "2X", "4X")
 DEFAULT_NVM_LATENCY = NVM_LATENCIES[0]
 INVALID_NVM_LATENCY = 0
 INVALID_TRANSACTION_COUNT = 0
@@ -568,7 +569,7 @@ def create_ycsb_latency_bar_chart(datasets):
 
     return (fig)
 
-def create_nvm_latency_bar_chart(datasets):
+def create_nvm_latency_line_chart(datasets):
     fig = plot.figure()
     ax1 = fig.add_subplot(111)
 
@@ -577,10 +578,8 @@ def create_nvm_latency_bar_chart(datasets):
     N = len(x_labels)
     M = len(NVM_LOGGING_NAMES)
     ind = np.arange(N)
-    margin = 0.15
-    width = ((1.0 - 2 * margin) / M)
-    bars = [None] * M * N
 
+    idx = 0
     for group in xrange(len(datasets)):
         # GROUP
         group_data = []
@@ -592,11 +591,16 @@ def create_nvm_latency_bar_chart(datasets):
 
         LOG.info("group_data = %s", str(group_data))
 
-        bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
-                                      color=OPT_COLORS[group],
-                                      linewidth=BAR_LINEWIDTH,
-                                      hatch=OPT_PATTERNS[group])
+        color_idx = 0        
+        if idx == 1:
+            color_idx = 3
 
+        ax1.plot(ind + 0.5, group_data,
+                 color=OPT_COLORS[color_idx],
+                 linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[color_idx], markersize=OPT_MARKER_SIZE,
+                 label=str(group))
+
+        idx = idx + 1
 
     # GRID
     makeGrid(ax1)
@@ -609,7 +613,8 @@ def create_nvm_latency_bar_chart(datasets):
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
     ax1.set_xlabel("NVM Latency", fontproperties=LABEL_FP)
-    ax1.set_xticklabels(x_labels)
+    ax1.set_xticklabels(NVM_LATENCIES_LABELS)
+    ax1.set_xlim([0.25, N - 0.25])
 
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
@@ -951,11 +956,11 @@ def nvm_latency_plot():
             dataset = loadDataFile(len(NVM_LATENCIES), 2, data_file)
             datasets.append(dataset)
 
-        fig = create_nvm_latency_bar_chart(datasets)
+        fig = create_nvm_latency_line_chart(datasets)
 
         fileName = "nvm-latency-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT/2.0)
 
 # PCOMMIT LATENCY -- PLOT
 def pcommit_latency_plot():
