@@ -830,7 +830,7 @@ def tpcc_throughput_plot():
 
     fileName = "tpcc-" + "throughput" + ".pdf"
 
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/3.0)
 
 # YCSB RECOVERY -- PLOT
 def ycsb_recovery_plot():
@@ -940,7 +940,7 @@ def tpcc_latency_plot():
 
     fileName = "tpcc-" + "latency" + ".pdf"
 
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/3.0)
 
 # NVM LATENCY -- PLOT
 def nvm_latency_plot():
@@ -1583,5 +1583,5 @@ if __name__ == '__main__':
         asynchronous_mode_plot()
 
     #create_legend_logging_types()
-    create_legend_storage()
+    #create_legend_storage()
     #create_legend_update_ratio()
