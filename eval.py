@@ -211,6 +211,12 @@ ASYNCHRONOUS_MODE_DIR = BASE_DIR + "/results/asynchronous_mode/"
 ASYNCHRONOUS_MODE_EXPERIMENT = 10
 ASYNCHRONOUS_MODE_CSV = "asynchronous_mode.csv"
 
+MOTIVATION_DIR = BASE_DIR + "/results/motivation/"
+MOTIVATION_EXPERIMENT = 11
+MOTIVATION_THROUGHPUT_CSV = "motivation_throughput.csv"
+MOTIVATION_RECOVERY_CSV = "motivation_recovery.csv"
+MOTIVATION_STORAGE_CSV = "motivation_storage.csv"
+
 ###################################################################################
 # UTILS
 ###################################################################################
@@ -334,7 +340,7 @@ def create_legend_storage():
     for group in xrange(len(STORAGE_LABELS)):
         data = [1]
         bars[group] = ax1.bar(ind + margin + (group * width), data, width,
-                              color=OPT_STACK_COLORS[group], 
+                              color=OPT_STACK_COLORS[group],
                               linewidth=BAR_LINEWIDTH)
 
     # LEGEND
@@ -355,18 +361,18 @@ def create_legend_update_ratio():
     lines = [None] * len(YCSB_UPDATE_NAMES)
 
     workload_mix = ("Read-Heavy", "Balanced", "Write-Heavy")
-             
-    for group in xrange(len(YCSB_UPDATE_NAMES)):        
+
+    for group in xrange(len(YCSB_UPDATE_NAMES)):
         data = [1]
         x_values = [1]
-        
-        lines[idx], = ax1.plot(x_values, data, color=OPT_LINE_COLORS[idx], linewidth=OPT_LINE_WIDTH, 
-                 marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, label=str(group))        
-        
+
+        lines[idx], = ax1.plot(x_values, data, color=OPT_LINE_COLORS[idx], linewidth=OPT_LINE_WIDTH,
+                 marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE, label=str(group))
+
         idx = idx + 1
-                
+
     # LEGEND
-    figlegend.legend(lines,  workload_mix, prop=LABEL_FP, loc=1, ncol=4, mode="expand", shadow=OPT_LEGEND_SHADOW, 
+    figlegend.legend(lines,  workload_mix, prop=LABEL_FP, loc=1, ncol=4, mode="expand", shadow=OPT_LEGEND_SHADOW,
                      frameon=False, borderaxespad=0.0, handleheight=2, handlelength=3.5)
 
     figlegend.savefig('legend_update_ratio.pdf')
@@ -464,7 +470,7 @@ def create_ycsb_recovery_bar_chart(datasets, ycsb):
     # X-AXIS
     ax1.set_xlabel("Number of Transactions", fontproperties=LABEL_FP)
     ax1.set_xticks(ind + margin + (group * width)/2.0 )
-    
+
     if ycsb == True:
         ax1.set_xticklabels(YCSB_RECOVERY_COUNTS_NAMES)
     else:
@@ -595,7 +601,7 @@ def create_nvm_latency_line_chart(datasets):
 
         LOG.info("group_data = %s", str(group_data))
 
-        color_idx = 0        
+        color_idx = 0
         if idx == 1:
             color_idx = 3
 
@@ -700,7 +706,7 @@ def create_flush_mode_bar_chart(datasets):
 
         LOG.info("group_data = %s", str(group_data))
 
-        color_group = 0        
+        color_group = 0
         if group == 1:
             color_group = 3
 
@@ -754,10 +760,10 @@ def create_asynchronous_mode_bar_chart(datasets):
 
         LOG.info("group_data = %s", str(group_data))
 
-        color_group = 0        
+        color_group = 0
         if group == 1:
             color_group = 3
-        
+
         bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
                                       color=OPT_COLORS[color_group],
                                       linewidth=BAR_LINEWIDTH,
@@ -776,6 +782,71 @@ def create_asynchronous_mode_bar_chart(datasets):
     ax1.set_xticks(ind + 0.5)
     ax1.set_xlabel("Logging Status", fontproperties=LABEL_FP)
     ax1.set_xticklabels(ASYNCHRONOUS_MODES_NAMES)
+
+    for label in ax1.get_yticklabels() :
+        label.set_fontproperties(TICK_FP)
+    for label in ax1.get_xticklabels() :
+        label.set_fontproperties(TICK_FP)
+
+    return (fig)
+
+def create_motivation_bar_chart(datasets, bar_type):
+    fig = plot.figure()
+    ax1 = fig.add_subplot(111)
+
+    # X-AXIS
+    N = 1
+    M = len(NVM_LOGGING_NAMES)
+    ind = np.arange(N)
+    margin = 0.15
+    width = ((1.0 - 3 * margin) / M)
+    bars = [None] * M * N
+    label_locations = [0.30, 0.71]
+
+    NVM_LOGGING_NAMES_UPPER_CASE = [x.upper() for x in NVM_LOGGING_NAMES]
+
+    for group in xrange(len(datasets)):
+        # GROUP
+        group_data = []
+
+        for line in  xrange(len(datasets[group])):
+            for col in  xrange(len(datasets[group][line])):
+                if col == 1:
+                    group_data.append(datasets[group][line][col])
+
+        LOG.info("group_data = %s", str(group_data))
+
+        color_group = 0
+        offset_group = 1
+        if group == 1:
+            color_group = 3
+            offset_group = 2
+            
+        bars[group] = ax1.bar(ind + (offset_group * margin) + (group * width), group_data, width,
+                                      color=OPT_COLORS[color_group],
+                                      linewidth=BAR_LINEWIDTH,
+                                      hatch=OPT_PATTERNS[color_group])
+        
+    # GRID
+    makeGrid(ax1)
+
+    # Y-AXIS
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
+    ax1.minorticks_off()
+    
+    if bar_type == "Throughput":
+        ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+    elif bar_type == "Recovery":
+        ax1.set_ylabel("Recovery Latency (s)", fontproperties=LABEL_FP)
+        ax1.set_yscale('log', nonposy='clip')
+        ax1.tick_params(axis='y', which='minor', left='off', right='off')
+    elif bar_type == "Storage":
+        ax1.set_ylabel("Storage (GB)", fontproperties=LABEL_FP)
+
+    # X-AXIS
+    ax1.set_xlabel("Logging Protocol", fontproperties=LABEL_FP)
+    ax1.set_xticks(label_locations)
+    ax1.set_xticklabels(NVM_LOGGING_NAMES_UPPER_CASE)
 
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
@@ -826,7 +897,7 @@ def tpcc_throughput_plot():
         dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
         datasets.append(dataset)
 
-    fig = create_ycsb_throughput_line_chart(datasets)
+    fig = create_motivation_bar_chart(datasets, "throughput")
 
     fileName = "tpcc-" + "throughput" + ".pdf"
 
@@ -1013,7 +1084,7 @@ def flush_mode_plot():
         fileName = "flush-mode-" + ycsb_update_name + ".pdf"
 
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
-        
+
 # ASYNCHRONOUS MODE -- PLOT
 def asynchronous_mode_plot():
 
@@ -1037,6 +1108,48 @@ def asynchronous_mode_plot():
         fileName = "asynchronous-mode-" + ycsb_update_name + ".pdf"
 
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
+
+# MOTIVATION -- PLOT
+def motivation_plot():
+
+    datasets = []
+    for logging_type in NVM_LOGGING_TYPES:
+        # figure out logging name and ycsb update name
+        nvm_logging_name = getLoggingName(logging_type)
+        
+        data_file = MOTIVATION_DIR + "/" + nvm_logging_name + "/" + MOTIVATION_THROUGHPUT_CSV
+        dataset = loadDataFile(1, 2, data_file)
+        datasets.append(dataset)
+
+    fig = create_motivation_bar_chart(datasets, "Throughput")
+    fileName = "motivation-" + "throughput.pdf"
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
+
+    datasets = []
+    for logging_type in NVM_LOGGING_TYPES:
+        # figure out logging name and ycsb update name
+        nvm_logging_name = getLoggingName(logging_type)
+
+        data_file = MOTIVATION_DIR + "/" + nvm_logging_name + "/" + MOTIVATION_RECOVERY_CSV
+        dataset = loadDataFile(1, 2, data_file)
+        datasets.append(dataset)
+
+    fig = create_motivation_bar_chart(datasets, "Recovery")
+    fileName = "motivation-" + "recovery.pdf"    
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
+
+    datasets = []
+    for logging_type in NVM_LOGGING_TYPES:
+        # figure out logging name and ycsb update name
+        nvm_logging_name = getLoggingName(logging_type)
+
+        data_file = MOTIVATION_DIR + "/" + nvm_logging_name + "/" + MOTIVATION_STORAGE_CSV        
+        dataset = loadDataFile(1, 2, data_file)
+        datasets.append(dataset)
+
+    fig = create_motivation_bar_chart(datasets, "Storage")
+    fileName = "motivation-" + "storage.pdf"
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
 
 ###################################################################################
 # EVAL HELPERS
@@ -1083,7 +1196,7 @@ def run_experiment(program,
                          "-n", str(nvm_latency),
                          "-p", str(pcommit_latency),
                          "-a", str(asynchronous_mode),
-                         "-t", str(transaction_count)])        
+                         "-t", str(transaction_count)])
     else:
         subprocess.call([program,
                          "-e", str(experiment_type),
@@ -1099,7 +1212,7 @@ def run_experiment(program,
                          "-p", str(pcommit_latency),
                          "-a", str(asynchronous_mode),
                          "-t", str(transaction_count)])
-        
+
 
 
 # COLLECT STATS
@@ -1384,7 +1497,7 @@ def nvm_latency_eval():
 
                 # COLLECT STATS
                 collect_stats(NVM_LATENCY_DIR, NVM_LATENCY_CSV, NVM_LATENCY_EXPERIMENT)
-                
+
     # RESET NVM LATENCY
     reset_nvm_latency()
 
@@ -1505,6 +1618,7 @@ if __name__ == '__main__':
     parser.add_argument("-v", "--pcommit_latency_plot", help='plot pcommit_latency', action='store_true')
     parser.add_argument("-w", "--flush_mode_plot", help='plot flush_mode', action='store_true')
     parser.add_argument("-x", "--asynchronous_mode_plot", help='plot asynchronous_mode', action='store_true')
+    parser.add_argument("-y", "--motivation_plot", help='plot motivation', action='store_true')
 
     args = parser.parse_args()
 
@@ -1581,6 +1695,9 @@ if __name__ == '__main__':
 
     if args.asynchronous_mode_plot:
         asynchronous_mode_plot()
+
+    if args.motivation_plot:
+        motivation_plot()
 
     #create_legend_logging_types()
     #create_legend_storage()
