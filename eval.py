@@ -49,7 +49,9 @@ OPT_GRAPH_HEIGHT = 300
 OPT_GRAPH_WIDTH = 400
 
 # http://colrd.com/palette/19308/
-COLOR_MAP = ('#9EC9E9', '#80CA86', '#F58A87', "#5DA5DA", "#66A26B", "#F15854")
+COLOR_MAP = ('#5D8AC6', '#9FD35D', '#C02500', "#003557", "#538B00", "#920000")
+#COLOR_MAP = ('#9EC9E9', '#80CA86', '#F58A87', "#5DA5DA", "#66A26B", "#F15854")
+
 
 OPT_COLORS = COLOR_MAP
 
@@ -59,12 +61,12 @@ OPT_MARKERS = (['o', 's', 'v', "^", "h", "v", ">", "x", "d", "<", "|", "", "|", 
 OPT_PATTERNS = ([ "////", "o", "\\\\", "////", "o", "\\\\", "//////", "." , "\\\\\\"])
 
 OPT_LABEL_WEIGHT = 'bold'
-OPT_LINE_COLORS = ('#fdc086', '#b3e2cd', '#fc8d62', '#a6cee3', '#e41a1c')
+OPT_LINE_COLORS = COLOR_MAP
 OPT_LINE_WIDTH = 6.0
 OPT_MARKER_SIZE = 10.0
 DATA_LABELS = []
 
-OPT_STACK_COLORS = ('#685050', '#FFF4C1', '#597463', '#444F51', '#1F071D')
+OPT_STACK_COLORS = ('#80A5C9', '#929B6A', '#E4AB55', '#003557')
 OPT_LINE_STYLES= ('-', ':', '--', '-.')
 
 # SET FONT
@@ -821,19 +823,19 @@ def create_motivation_bar_chart(datasets, bar_type):
         if group == 1:
             color_group = 3
             offset_group = 2
-            
+
         bars[group] = ax1.bar(ind + (offset_group * margin) + (group * width), group_data, width,
                                       color=OPT_COLORS[color_group],
                                       linewidth=BAR_LINEWIDTH,
                                       hatch=OPT_PATTERNS[color_group])
-        
+
     # GRID
     makeGrid(ax1)
 
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
-    
+
     if bar_type == "Throughput":
         ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
     elif bar_type == "Recovery":
@@ -897,7 +899,7 @@ def tpcc_throughput_plot():
         dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
         datasets.append(dataset)
 
-    fig = create_motivation_bar_chart(datasets, "throughput")
+    fig = create_ycsb_throughput_line_chart(datasets)
 
     fileName = "tpcc-" + "throughput" + ".pdf"
 
@@ -1116,7 +1118,7 @@ def motivation_plot():
     for logging_type in NVM_LOGGING_TYPES:
         # figure out logging name and ycsb update name
         nvm_logging_name = getLoggingName(logging_type)
-        
+
         data_file = MOTIVATION_DIR + "/" + nvm_logging_name + "/" + MOTIVATION_THROUGHPUT_CSV
         dataset = loadDataFile(1, 2, data_file)
         datasets.append(dataset)
@@ -1135,7 +1137,7 @@ def motivation_plot():
         datasets.append(dataset)
 
     fig = create_motivation_bar_chart(datasets, "Recovery")
-    fileName = "motivation-" + "recovery.pdf"    
+    fileName = "motivation-" + "recovery.pdf"
     saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
 
     datasets = []
@@ -1143,7 +1145,7 @@ def motivation_plot():
         # figure out logging name and ycsb update name
         nvm_logging_name = getLoggingName(logging_type)
 
-        data_file = MOTIVATION_DIR + "/" + nvm_logging_name + "/" + MOTIVATION_STORAGE_CSV        
+        data_file = MOTIVATION_DIR + "/" + nvm_logging_name + "/" + MOTIVATION_STORAGE_CSV
         dataset = loadDataFile(1, 2, data_file)
         datasets.append(dataset)
 
@@ -1701,4 +1703,4 @@ if __name__ == '__main__':
 
     #create_legend_logging_types()
     #create_legend_storage()
-    #create_legend_update_ratio()
+    create_legend_update_ratio()
