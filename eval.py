@@ -159,6 +159,9 @@ ASYNCHRONOUS_MODES = ("1", "3")
 DEFAULT_ASYNCHRONOUS_MODE = 1
 ASYNCHRONOUS_MODES_NAMES = ("Enabled", "Disabled")
 
+REPLICATION_MODES = ("1", "2", "3", "4")
+REPLICATION_MODES_NAMES = ("Disabled", "Async", "Semi-Sync", "Sync")
+
 EXPERIMENT_TYPE_THROUGHPUT = 1
 EXPERIMENT_TYPE_RECOVERY = 2
 EXPERIMENT_TYPE_STORAGE = 3
@@ -218,6 +221,14 @@ MOTIVATION_EXPERIMENT = 11
 MOTIVATION_THROUGHPUT_CSV = "motivation_throughput.csv"
 MOTIVATION_RECOVERY_CSV = "motivation_recovery.csv"
 MOTIVATION_STORAGE_CSV = "motivation_storage.csv"
+
+REPLICATION_THROUGHPUT_DIR = BASE_DIR + "/results/replication/throughput/"
+REPLICATION_THROUGHPUT_EXPERIMENT = 12
+REPLICATION_THROUGHPUT_CSV = "replication_throughput.csv"
+
+REPLICATION_LATENCY_DIR = BASE_DIR + "/results/replication/latency/"
+REPLICATION_LATENCY_EXPERIMENT = 13
+REPLICATION_LATENCY_CSV = "replication_latency.csv"
 
 ###################################################################################
 # UTILS
@@ -857,6 +868,66 @@ def create_motivation_bar_chart(datasets, bar_type):
 
     return (fig)
 
+def create_replication_bar_chart(datasets, bar_type):
+    fig = plot.figure()
+    ax1 = fig.add_subplot(111)
+
+    # X-AXIS
+    x_labels = [str(i) for i in REPLICATION_MODES]
+    N = len(x_labels)
+    M = len(NVM_LOGGING_NAMES)
+    ind = np.arange(N)
+    margin = 0.15
+    width = ((1.0 - 2 * margin) / M)
+    bars = [None] * M * N
+
+    REPLICATION_MODES_NAMES_UPPER_CASE = [x.upper() for x in REPLICATION_MODES_NAMES]
+
+    for group in xrange(len(datasets)):
+        # GROUP
+        group_data = []
+
+        for line in  xrange(len(datasets[group])):
+            for col in  xrange(len(datasets[group][line])):
+                if col == 1:
+                    group_data.append(datasets[group][line][col])
+
+        LOG.info("group_data = %s", str(group_data))
+
+        color_group = 0
+        if group == 1:
+            color_group = 3
+
+        bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
+                                      color=OPT_COLORS[color_group],
+                                      linewidth=BAR_LINEWIDTH,
+                                      hatch=OPT_PATTERNS[group])
+
+
+    # GRID
+    makeGrid(ax1)
+
+    # Y-AXIS
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS + 2))
+    ax1.minorticks_off()
+
+    if bar_type == "Throughput":
+        ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+    elif bar_type == "Latency":
+        ax1.set_ylabel("Latency (s)", fontproperties=LABEL_FP)
+
+    # X-AXIS
+    ax1.set_xticks(ind + 0.5)
+    ax1.set_xlabel("Replication Mode", fontproperties=LABEL_FP)
+    ax1.set_xticklabels(REPLICATION_MODES_NAMES_UPPER_CASE)
+
+    for label in ax1.get_yticklabels() :
+        label.set_fontproperties(TICK_FP)
+    for label in ax1.get_xticklabels() :
+        label.set_fontproperties(TICK_FP)
+
+    return (fig)
+
 ###################################################################################
 # PLOT HELPERS
 ###################################################################################
@@ -1116,42 +1187,95 @@ def motivation_plot():
 
     datasets = []
     for logging_type in NVM_LOGGING_TYPES:
+
         # figure out logging name and ycsb update name
         nvm_logging_name = getLoggingName(logging_type)
 
         data_file = MOTIVATION_DIR + "/" + nvm_logging_name + "/" + MOTIVATION_THROUGHPUT_CSV
+        
         dataset = loadDataFile(1, 2, data_file)
         datasets.append(dataset)
 
     fig = create_motivation_bar_chart(datasets, "Throughput")
+
     fileName = "motivation-" + "throughput.pdf"
     saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
 
     datasets = []
     for logging_type in NVM_LOGGING_TYPES:
+        
         # figure out logging name and ycsb update name
         nvm_logging_name = getLoggingName(logging_type)
 
         data_file = MOTIVATION_DIR + "/" + nvm_logging_name + "/" + MOTIVATION_RECOVERY_CSV
+
         dataset = loadDataFile(1, 2, data_file)
         datasets.append(dataset)
 
     fig = create_motivation_bar_chart(datasets, "Recovery")
+
     fileName = "motivation-" + "recovery.pdf"
     saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
 
     datasets = []
     for logging_type in NVM_LOGGING_TYPES:
+
         # figure out logging name and ycsb update name
         nvm_logging_name = getLoggingName(logging_type)
 
         data_file = MOTIVATION_DIR + "/" + nvm_logging_name + "/" + MOTIVATION_STORAGE_CSV
+        
         dataset = loadDataFile(1, 2, data_file)
         datasets.append(dataset)
 
     fig = create_motivation_bar_chart(datasets, "Storage")
+
     fileName = "motivation-" + "storage.pdf"
     saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
+
+# REPLICATION -- PLOT
+def replication_plot():
+
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+
+        ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+
+        datasets = []
+        for logging_type in NVM_LOGGING_TYPES:
+            
+            # figure out logging name and ycsb update name
+            nvm_logging_name = getLoggingName(logging_type)
+    
+            data_file = REPLICATION_THROUGHPUT_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + REPLICATION_THROUGHPUT_CSV
+    
+            dataset = loadDataFile(len(REPLICATION_MODES), 2, data_file)
+            datasets.append(dataset)
+    
+        fig = create_replication_bar_chart(datasets, "Throughput")
+
+        fileName = "replication-" + "throughput-" + ycsb_update_name + ".pdf"                
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+
+        ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+
+        datasets = []
+        for logging_type in NVM_LOGGING_TYPES:
+            
+            # figure out logging name and ycsb update name
+            nvm_logging_name = getLoggingName(logging_type)
+    
+            data_file = REPLICATION_LATENCY_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + REPLICATION_LATENCY_CSV
+    
+            dataset = loadDataFile(len(REPLICATION_MODES), 2, data_file)
+            datasets.append(dataset)
+    
+        fig = create_replication_bar_chart(datasets, "Latency")
+    
+        fileName = "replication-" + "latency-" + ycsb_update_name + ".pdf"
+        
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 ###################################################################################
 # EVAL HELPERS
@@ -1620,7 +1744,8 @@ if __name__ == '__main__':
     parser.add_argument("-v", "--pcommit_latency_plot", help='plot pcommit_latency', action='store_true')
     parser.add_argument("-w", "--flush_mode_plot", help='plot flush_mode', action='store_true')
     parser.add_argument("-x", "--asynchronous_mode_plot", help='plot asynchronous_mode', action='store_true')
-    parser.add_argument("-y", "--motivation_plot", help='plot motivation', action='store_true')
+    #parser.add_argument("-y", "--motivation_plot", help='plot motivation', action='store_true')
+    parser.add_argument("-y", "--replication_plot", help='plot replication', action='store_true')
 
     args = parser.parse_args()
 
@@ -1698,8 +1823,11 @@ if __name__ == '__main__':
     if args.asynchronous_mode_plot:
         asynchronous_mode_plot()
 
-    if args.motivation_plot:
-        motivation_plot()
+    #if args.motivation_plot:
+    #    motivation_plot()
+
+    if args.replication_plot:
+        replication_plot()
 
     #create_legend_logging_types()
     #create_legend_storage()
