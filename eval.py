@@ -1703,4 +1703,4 @@ if __name__ == '__main__':
 
     #create_legend_logging_types()
     #create_legend_storage()
-    create_legend_update_ratio()
+    #create_legend_update_ratio()
