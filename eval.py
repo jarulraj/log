@@ -529,9 +529,6 @@ def create_ycsb_storage_bar_chart(datasets):
     fig = plot.figure()
     ax1 = fig.add_subplot(111)
 
-    num_items = len(STORAGE_LOGGING_TYPES);
-    ind = np.arange(num_items)
-    margin = 0.2
     width = 1.0
 
     # GROUP LABELS
@@ -583,11 +580,11 @@ def create_ycsb_storage_bar_chart(datasets):
 
     # TYPE
     bottom_list = [0] * len(datasets[0])
-    for type in  xrange(1, len(datasets)):
-        LOG.info("TYPE :: %d %s", type, datasets[type])
+    for group_type in  xrange(1, len(datasets)):
+        LOG.info("TYPE :: %d %s", group_type, datasets[group_type])
 
-        bars[type] = ax1.bar(xbarticks, datasets[type], col_width,
-                             color=OPT_STACK_COLORS[type - 1], linewidth=BAR_LINEWIDTH,
+        bars[group_type] = ax1.bar(xbarticks, datasets[group_type], col_width,
+                             color=OPT_STACK_COLORS[group_type - 1], linewidth=BAR_LINEWIDTH,
                              bottom = bottom_list)
         bottom_list = map(add, bottom_list, datasets[type])
 
@@ -610,7 +607,7 @@ def create_ycsb_storage_bar_chart(datasets):
 
     return (fig)
 
-def create_ycsb_latency_bar_chart(datasets, type):
+def create_ycsb_latency_bar_chart(datasets, experiment_type):
     fig = plot.figure()
     ax1 = fig.add_subplot(111)
 
@@ -649,12 +646,12 @@ def create_ycsb_latency_bar_chart(datasets, type):
     ax1.set_yscale('log', nonposy='clip')
     ax1.tick_params(axis='y', which='minor', left='off', right='off')
 
-    if type == "ycsb":
+    if experiment_type == "ycsb":
         YLIMIT_MIN = math.pow(10, -2)
         YLIMIT_MAX = math.pow(10, +2)
         ax1.set_ylim(YLIMIT_MIN, YLIMIT_MAX)
         ax1.set_yticklabels(["", "0.01", "0.1", "1", "10", "100"])
-    elif type == "tpcc":
+    elif experiment_type == "tpcc":
         YLIMIT_MIN = math.pow(10, -1)
         YLIMIT_MAX = math.pow(10, +3)
         ax1.set_ylim(YLIMIT_MIN, YLIMIT_MAX)
@@ -679,7 +676,6 @@ def create_nvm_latency_line_chart(datasets):
     # X-AXIS
     x_labels = [str(i) for i in NVM_LATENCIES]
     N = len(x_labels)
-    M = len(NVM_LOGGING_NAMES)
     ind = np.arange(N)
 
     idx = 0
@@ -948,7 +944,7 @@ def create_motivation_bar_chart(datasets, bar_type):
 
     return (fig)
 
-def create_replication_bar_chart(datasets, bar_type):
+def create_replication_chart(datasets, experiment_type):
     fig = plot.figure()
     ax1 = fig.add_subplot(111)
 
@@ -963,6 +959,7 @@ def create_replication_bar_chart(datasets, bar_type):
 
     REPLICATION_MODES_NAMES_UPPER_CASE = [x.upper() for x in REPLICATION_MODES_NAMES]
 
+    idx = 0
     for group in xrange(len(datasets)):
         # GROUP
         group_data = []
@@ -970,7 +967,10 @@ def create_replication_bar_chart(datasets, bar_type):
         for line in  xrange(len(datasets[group])):
             for col in  xrange(len(datasets[group][line])):
                 if col == 1:
-                    group_data.append(datasets[group][line][col])
+                    if experiment_type == "Throughput":
+                        group_data.append(datasets[group][line][col])
+                    elif experiment_type == "Latency":
+                        group_data.append(datasets[group][line][col] * 1000) # ms
 
         LOG.info("group_data = %s", str(group_data))
 
@@ -978,10 +978,17 @@ def create_replication_bar_chart(datasets, bar_type):
         if group == 1:
             color_group = 3
 
-        bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
-                                      color=OPT_COLORS[color_group],
-                                      linewidth=BAR_LINEWIDTH,
-                                      hatch=OPT_PATTERNS[group])
+        if experiment_type == "Throughput":
+            ax1.plot(ind + 0.5, group_data,
+                 color=OPT_LINE_COLORS[color_group],
+                 linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE,
+                 label=str(group))            
+            idx = idx + 1            
+        elif experiment_type == "Latency":
+            bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
+                                          color=OPT_COLORS[color_group],
+                                          linewidth=BAR_LINEWIDTH,
+                                          hatch=OPT_PATTERNS[group])
 
 
     # GRID
@@ -991,15 +998,18 @@ def create_replication_bar_chart(datasets, bar_type):
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS + 2))
     ax1.minorticks_off()
 
-    if bar_type == "Throughput":
+    if experiment_type == "Throughput":
         ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
-    elif bar_type == "Latency":
-        ax1.set_ylabel("Latency (s)", fontproperties=LABEL_FP)
+    elif experiment_type == "Latency":
+        ax1.set_ylabel("Latency (ms)", fontproperties=LABEL_FP)
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
     ax1.set_xlabel("Replication Mode", fontproperties=LABEL_FP)
     ax1.set_xticklabels(REPLICATION_MODES_NAMES_UPPER_CASE)
+
+    if experiment_type == "Throughput":
+        ax1.set_xlim([0.01, N - 0.01])
 
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
@@ -1331,7 +1341,7 @@ def replication_plot():
             dataset = loadDataFile(len(REPLICATION_MODES), 2, data_file)
             datasets.append(dataset)
 
-        fig = create_replication_bar_chart(datasets, "Throughput")
+        fig = create_replication_chart(datasets, "Throughput")
 
         fileName = "replication-" + "throughput-" + ycsb_update_name + ".pdf"
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
@@ -1351,7 +1361,7 @@ def replication_plot():
             dataset = loadDataFile(len(REPLICATION_MODES), 2, data_file)
             datasets.append(dataset)
 
-        fig = create_replication_bar_chart(datasets, "Latency")
+        fig = create_replication_chart(datasets, "Latency")
 
         fileName = "replication-" + "latency-" + ycsb_update_name + ".pdf"
 
