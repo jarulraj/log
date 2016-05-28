@@ -66,7 +66,7 @@ OPT_LINE_WIDTH = 6.0
 OPT_MARKER_SIZE = 10.0
 DATA_LABELS = []
 
-OPT_STACK_COLORS = ('#80A5C9', '#929B6A', '#E4AB55', '#003557')
+OPT_STACK_COLORS = ('#BBBB88', '#EEDD99', '#EEC290', '#EEAA88')
 OPT_LINE_STYLES= ('-', ':', '--', '-.')
 
 # SET FONT
@@ -144,8 +144,8 @@ TPCC_BENCHMARK_TYPE = 2
 
 YCSB_RECOVERY_COUNTS = (10000, 100000)
 TPCC_RECOVERY_COUNTS = (1000, 10000)
-YCSB_RECOVERY_COUNTS_NAMES = ("10000000", "100000000")
-TPCC_RECOVERY_COUNTS_NAMES = ("1000000", "10000000")
+YCSB_RECOVERY_COUNTS_NAMES = ("10000", "100000")
+TPCC_RECOVERY_COUNTS_NAMES = ("1000", "10000")
 
 YCSB_UPDATE_RATIOS = (0.1, 0.5, 0.9)
 YCSB_UPDATE_NAMES = ("read-heavy", "balanced", "write-heavy")
@@ -167,7 +167,7 @@ EXPERIMENT_TYPE_RECOVERY = 2
 EXPERIMENT_TYPE_STORAGE = 3
 EXPERIMENT_TYPE_LATENCY = 4
 
-STORAGE_LOGGING_TYPES = ("WBL-DRAM", "WBL-NVM", "WAL-DRAM", "WAL-NVM")
+STORAGE_LOGGING_TYPES = ("DRAM", "NVM", "DRAM", "NVM")
 STORAGE_LABELS = ("Table", "Index", "Log", "Checkpoint")
 
 YCSB_THROUGHPUT_DIR = BASE_DIR + "/results/throughput/ycsb/"
@@ -283,6 +283,32 @@ def saveGraph(fig, output, width, height):
     fig.savefig(pp, format='pdf', bbox_inches='tight')
     pp.close()
     LOG.info("OUTPUT: %s", output)
+
+def mk_groups(data):
+    try:
+        newdata = data.items()
+    except:
+        return
+
+    thisgroup = []
+    groups = []
+    for key, value in newdata:
+        newgroups = mk_groups(value)
+        if newgroups is None:
+            thisgroup.append((key, value))
+        else:
+            thisgroup.append((key, len(newgroups[-1])))
+            if groups:
+                groups = [g + n for n, g in zip(newgroups, groups)]
+            else:
+                groups = newgroups
+    return [thisgroup] + groups
+
+def add_line(ax, xpos, ypos):
+    line = plot.Line2D([xpos, xpos], [ypos + .1, ypos - 0.1],
+                      transform=ax.transAxes, color='black')
+    line.set_clip_on(False)
+    ax.add_line(line)
 
 # Figure out ycsb update name
 def getYCSBUpdateName(ycsb_update_ratio):
@@ -426,7 +452,7 @@ def create_ycsb_throughput_line_chart(datasets):
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
-    
+
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
     ax1.set_xlabel("Number of Worker Threads", fontproperties=LABEL_FP)
@@ -478,9 +504,13 @@ def create_ycsb_recovery_bar_chart(datasets, ycsb):
     ax1.set_ylabel("Recovery Latency (s)", fontproperties=LABEL_FP)
     ax1.set_yscale('log', nonposy='clip')
     ax1.tick_params(axis='y', which='minor', left='off', right='off')
+    YLIMIT_MIN = math.pow(10, -2)
+    YLIMIT_MAX = math.pow(10, +2)
+    ax1.set_ylim(YLIMIT_MIN, YLIMIT_MAX)
+    ax1.set_yticklabels(["", "0.1", "1", "10", "100", "1000"])
 
     # X-AXIS
-    ax1.set_xlabel("Number of Transactions", fontproperties=LABEL_FP)
+    ax1.set_xlabel("Number of Transactions (K)", fontproperties=LABEL_FP)
     ax1.set_xticks(ind + margin + (group * width)/2.0 )
 
     if ycsb == True:
@@ -504,8 +534,48 @@ def create_ycsb_storage_bar_chart(datasets):
     margin = 0.2
     width = 1.0
 
+    # GROUP LABELS
+    group_labels = {
+            'NVM-WBL':
+                {'Milk': 10,
+                'Water': 20},
+            'NVM-WAL':
+                {'Sugar': 5,
+                'Honey': 6}
+           }
+
+    groups = mk_groups(group_labels)
+    xy = groups.pop()
+    x, y = zip(*xy)
+    ly = len(y)
+    xticks = range(1, ly + 1)
+
+    scale = 1. / ly
+    for pos in xrange(ly + 1):
+        add_line(ax1, pos * scale, -.1)
+    ypos = -.2
+
+    NVM_LOGGING_NAMES_UPPER_CASE = [x.upper() for x in NVM_LOGGING_NAMES]
+    while groups:
+        group = groups.pop()
+        pos = 0
+        idx = 0
+        for label, rpos in group:
+            lxpos = (pos + .5 * rpos) * scale
+            ax1.text(lxpos, ypos - 0.1, NVM_LOGGING_NAMES_UPPER_CASE[idx],
+                     ha='center', transform=ax1.transAxes,
+                     fontproperties = LABEL_FP)
+            add_line(ax1, pos * scale, ypos)
+            pos += rpos
+            idx = idx + 1
+
+        add_line(ax1, pos * scale, ypos)
+        ypos -= .1
+
     col_offset = 0.2
     col_width = width - col_offset
+    xbarticks = [x + col_offset/2.0 for x in xticks]
+    xlabelticks = [x + 0.5 for x in xticks]
 
     bars = [None] * len(STORAGE_LABELS) * 2
 
@@ -516,7 +586,7 @@ def create_ycsb_storage_bar_chart(datasets):
     for type in  xrange(1, len(datasets)):
         LOG.info("TYPE :: %d %s", type, datasets[type])
 
-        bars[type] = ax1.bar(ind + margin + col_offset, datasets[type], col_width,
+        bars[type] = ax1.bar(xbarticks, datasets[type], col_width,
                              color=OPT_STACK_COLORS[type - 1], linewidth=BAR_LINEWIDTH,
                              bottom = bottom_list)
         bottom_list = map(add, bottom_list, datasets[type])
@@ -530,7 +600,7 @@ def create_ycsb_storage_bar_chart(datasets):
 
     # X-AXIS
     ax1.tick_params(axis='x', which='both', top='off', bottom='off')
-    ax1.set_xticks(ind + margin + 0.6)
+    ax1.set_xticks(xlabelticks)
     ax1.set_xticklabels(STORAGE_LOGGING_TYPES)
 
     for label in ax1.get_yticklabels() :
@@ -578,7 +648,7 @@ def create_ycsb_latency_bar_chart(datasets, type):
     ax1.set_ylabel("Latency (ms)", fontproperties=LABEL_FP)
     ax1.set_yscale('log', nonposy='clip')
     ax1.tick_params(axis='y', which='minor', left='off', right='off')
-    
+
     if type == "ycsb":
         YLIMIT_MIN = math.pow(10, -2)
         YLIMIT_MAX = math.pow(10, +2)
@@ -1037,7 +1107,7 @@ def ycsb_storage_plot():
 
     fileName = "ycsb-storage.pdf"
 
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH*1.5, height=OPT_GRAPH_HEIGHT/1.5)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 # TPCC STORAGE -- PLOT
 def tpcc_storage_plot():
@@ -1050,7 +1120,7 @@ def tpcc_storage_plot():
 
     fileName = "tpcc-storage.pdf"
 
-    saveGraph(fig, fileName, width=OPT_GRAPH_WIDTH*1.5, height=OPT_GRAPH_HEIGHT/1.5)
+    saveGraph(fig, fileName, width=OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 # YCSB LATENCY -- PLOT
 def ycsb_latency_plot():
@@ -1202,7 +1272,7 @@ def motivation_plot():
         nvm_logging_name = getLoggingName(logging_type)
 
         data_file = MOTIVATION_DIR + "/" + nvm_logging_name + "/" + MOTIVATION_THROUGHPUT_CSV
-        
+
         dataset = loadDataFile(1, 2, data_file)
         datasets.append(dataset)
 
@@ -1213,7 +1283,7 @@ def motivation_plot():
 
     datasets = []
     for logging_type in NVM_LOGGING_TYPES:
-        
+
         # figure out logging name and ycsb update name
         nvm_logging_name = getLoggingName(logging_type)
 
@@ -1234,7 +1304,7 @@ def motivation_plot():
         nvm_logging_name = getLoggingName(logging_type)
 
         data_file = MOTIVATION_DIR + "/" + nvm_logging_name + "/" + MOTIVATION_STORAGE_CSV
-        
+
         dataset = loadDataFile(1, 2, data_file)
         datasets.append(dataset)
 
@@ -1252,18 +1322,18 @@ def replication_plot():
 
         datasets = []
         for logging_type in NVM_LOGGING_TYPES:
-            
+
             # figure out logging name and ycsb update name
             nvm_logging_name = getLoggingName(logging_type)
-    
+
             data_file = REPLICATION_THROUGHPUT_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + REPLICATION_THROUGHPUT_CSV
-    
+
             dataset = loadDataFile(len(REPLICATION_MODES), 2, data_file)
             datasets.append(dataset)
-    
+
         fig = create_replication_bar_chart(datasets, "Throughput")
 
-        fileName = "replication-" + "throughput-" + ycsb_update_name + ".pdf"                
+        fileName = "replication-" + "throughput-" + ycsb_update_name + ".pdf"
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
@@ -1272,19 +1342,19 @@ def replication_plot():
 
         datasets = []
         for logging_type in NVM_LOGGING_TYPES:
-            
+
             # figure out logging name and ycsb update name
             nvm_logging_name = getLoggingName(logging_type)
-    
+
             data_file = REPLICATION_LATENCY_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + REPLICATION_LATENCY_CSV
-    
+
             dataset = loadDataFile(len(REPLICATION_MODES), 2, data_file)
             datasets.append(dataset)
-    
+
         fig = create_replication_bar_chart(datasets, "Latency")
-    
+
         fileName = "replication-" + "latency-" + ycsb_update_name + ".pdf"
-        
+
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
 
 ###################################################################################
