@@ -330,38 +330,82 @@ def getLoggingName(logging_type):
 # PLOT
 ###################################################################################
 
-def create_legend_logging_types():
+def create_legend_logging_types(line_chart, nvm_only):
     fig = pylab.figure()
     ax1 = fig.add_subplot(111)
 
-    figlegend = pylab.figure(figsize=(16, 0.5))
+    if nvm_only == True:
+        figlegend = pylab.figure(figsize=(5.25, 0.5))
+    else:
+        figlegend = pylab.figure(figsize=(15, 0.5))
 
-    N = len(LOGGING_NAMES);
+    if nvm_only == False:
+        ARRAY = LOGGING_NAMES
+    else:
+        ARRAY = NVM_LOGGING_NAMES
+
+    N = len(ARRAY);
     ind = np.arange(1)
     margin = 0.10
     width = ((1.0 - 2 * margin) / N) * 2
     data = [1]
+    x_values = [1]
 
-    bars = [None] * (len(LOGGING_NAMES) + 1) * 2
+    bars = [None] * (len(ARRAY) + 1) * 2
+    lines = [None] * (len(ARRAY) + 1) * 2
 
     idx = 0
-    for group in xrange(len(LOGGING_NAMES)):
+    for group in xrange(len(ARRAY)):
+        color_idx = idx
+        if nvm_only == True:
+            if idx == 1:
+                color_idx = 3
+
         bars[idx] = ax1.bar(ind + margin + ((idx + 1) * width), data, width,
-                            color=OPT_COLORS[idx],
+                            color=OPT_COLORS[color_idx],
                             linewidth=BAR_LINEWIDTH,
                             hatch=OPT_PATTERNS[group])
+
         idx = idx + 1
 
-    LOGGING_NAMES_UPPER_CASE = [x.upper() for x in LOGGING_NAMES]
+    idx = 0
+    for group in xrange(len(ARRAY)):
+        color_idx = idx
+        if nvm_only == True:
+            if idx == 1:
+                color_idx = 3
+
+        lines[idx], = ax1.plot(x_values, data, color=OPT_LINE_COLORS[color_idx],
+                               linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[color_idx],
+                               markersize=OPT_MARKER_SIZE,
+                               label=str(group))
+
+        idx = idx + 1
+
+    ARRAY_UPPER_CASE = [x.upper() for x in ARRAY]
 
     # LEGEND
-    figlegend.legend(bars, LOGGING_NAMES_UPPER_CASE, prop=LEGEND_FP,
-                     loc=1, ncol=len(LOGGING_NAMES),
-                     mode="expand", shadow=OPT_LEGEND_SHADOW,
-                     frameon=False, borderaxespad=0.0,
-                     handleheight=1, handlelength=4)
+    if line_chart == False:
+        figlegend.legend(bars, ARRAY_UPPER_CASE, prop=LEGEND_FP,
+                         loc=1, ncol=len(ARRAY),
+                         mode="expand", shadow=OPT_LEGEND_SHADOW,
+                         frameon=False, borderaxespad=0.0,
+                         handleheight=1, handlelength=4)
+    else:
+        figlegend.legend(lines,  ARRAY_UPPER_CASE, prop=LEGEND_FP,
+                         loc=1, ncol=len(ARRAY),
+                         mode="expand", shadow=OPT_LEGEND_SHADOW,
+                         frameon=False, borderaxespad=0.0,
+                         handleheight=1, handlelength=4)
 
-    figlegend.savefig('legend_logging_types.pdf')
+    filename = 'legend_logging_types'
+    if line_chart == True:
+        filename = filename + "_line"
+    if nvm_only == True:
+        filename = filename + "_nvm"
+    filename = filename + ".pdf"
+
+    figlegend.savefig(filename)
 
 def create_legend_storage():
     fig = pylab.figure()
@@ -387,7 +431,7 @@ def create_legend_storage():
                      loc=1, ncol=len(STORAGE_LABELS),
                      mode="expand", shadow=OPT_LEGEND_SHADOW,
                      frameon=False, borderaxespad=0.0,
-                     handleheight=2, handlelength=3.5)
+                     handleheight=1, handlelength=4)
 
     figlegend.savefig('legend_storage.pdf')
 
@@ -395,7 +439,7 @@ def create_legend_update_ratio():
     fig = pylab.figure()
     ax1 = fig.add_subplot(111)
 
-    figlegend = pylab.figure(figsize=(7, 0.5))
+    figlegend = pylab.figure(figsize=(9, 0.5))
     idx = 0
     lines = [None] * len(YCSB_UPDATE_NAMES)
 
@@ -411,8 +455,11 @@ def create_legend_update_ratio():
         idx = idx + 1
 
     # LEGEND
-    figlegend.legend(lines,  workload_mix, prop=LABEL_FP, loc=1, ncol=4, mode="expand", shadow=OPT_LEGEND_SHADOW,
-                     frameon=False, borderaxespad=0.0, handleheight=2, handlelength=3.5)
+    figlegend.legend(lines,  workload_mix, prop=LEGEND_FP,
+                     loc=1, ncol=4,
+                     mode="expand", shadow=OPT_LEGEND_SHADOW,
+                     frameon=False, borderaxespad=0.0,
+                     handleheight=1, handlelength=4)
 
     figlegend.savefig('legend_update_ratio.pdf')
 
@@ -982,8 +1029,8 @@ def create_replication_chart(datasets, experiment_type):
             ax1.plot(ind + 0.5, group_data,
                  color=OPT_LINE_COLORS[color_group],
                  linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE,
-                 label=str(group))            
-            idx = idx + 1            
+                 label=str(group))
+            idx = idx + 1
         elif experiment_type == "Latency":
             bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
                                           color=OPT_COLORS[color_group],
@@ -1919,6 +1966,9 @@ if __name__ == '__main__':
     if args.replication_plot:
         replication_plot()
 
-    #create_legend_logging_types()
+    #create_legend_logging_types(False, False)
+    #create_legend_logging_types(False, True)
+    #create_legend_logging_types(True, False)
+    #create_legend_logging_types(True, True)
     #create_legend_storage()
     #create_legend_update_ratio()
