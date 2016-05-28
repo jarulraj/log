@@ -426,11 +426,10 @@ def create_ycsb_throughput_line_chart(datasets):
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
-    #ax1.set_yscale('log', nonposy='clip')
-
+    
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("Number of Backends", fontproperties=LABEL_FP)
+    ax1.set_xlabel("Number of Worker Threads", fontproperties=LABEL_FP)
     ax1.set_xticklabels(x_labels)
     ax1.set_xlim([0.25, N - 0.25])
 
@@ -541,7 +540,7 @@ def create_ycsb_storage_bar_chart(datasets):
 
     return (fig)
 
-def create_ycsb_latency_bar_chart(datasets):
+def create_ycsb_latency_bar_chart(datasets, type):
     fig = plot.figure()
     ax1 = fig.add_subplot(111)
 
@@ -579,10 +578,21 @@ def create_ycsb_latency_bar_chart(datasets):
     ax1.set_ylabel("Latency (ms)", fontproperties=LABEL_FP)
     ax1.set_yscale('log', nonposy='clip')
     ax1.tick_params(axis='y', which='minor', left='off', right='off')
+    
+    if type == "ycsb":
+        YLIMIT_MIN = math.pow(10, -2)
+        YLIMIT_MAX = math.pow(10, +2)
+        ax1.set_ylim(YLIMIT_MIN, YLIMIT_MAX)
+        ax1.set_yticklabels(["", "0.01", "0.1", "1", "10", "100"])
+    elif type == "tpcc":
+        YLIMIT_MIN = math.pow(10, -1)
+        YLIMIT_MAX = math.pow(10, +3)
+        ax1.set_ylim(YLIMIT_MIN, YLIMIT_MAX)
+        ax1.set_yticklabels(["", "0.1", "1", "10", "100", "1000"])
 
     # X-AXIS
     ax1.set_xticks(ind + margin + 0.5)
-    ax1.set_xlabel("Number of Clients", fontproperties=LABEL_FP)
+    ax1.set_xlabel("Number of Worker Threads", fontproperties=LABEL_FP)
     ax1.set_xticklabels(x_labels)
 
     for label in ax1.get_yticklabels() :
@@ -1060,7 +1070,7 @@ def ycsb_latency_plot():
             dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
             datasets.append(dataset)
 
-        fig = create_ycsb_latency_bar_chart(datasets)
+        fig = create_ycsb_latency_bar_chart(datasets , "ycsb")
 
         fileName = "ycsb-" + "latency-" + ycsb_update_name + ".pdf"
 
@@ -1080,7 +1090,7 @@ def tpcc_latency_plot():
         dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
         datasets.append(dataset)
 
-    fig = create_ycsb_latency_bar_chart(datasets)
+    fig = create_ycsb_latency_bar_chart(datasets, "tpcc")
 
     fileName = "tpcc-" + "latency" + ".pdf"
 
