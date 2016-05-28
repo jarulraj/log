@@ -976,6 +976,7 @@ def create_motivation_bar_chart(datasets, bar_type):
         ax1.set_ylabel("Recovery Latency (s)", fontproperties=LABEL_FP)
         ax1.set_yscale('log', nonposy='clip')
         ax1.tick_params(axis='y', which='minor', left='off', right='off')
+        ax1.set_yticklabels(["", "0.1", "1", "10", "100", "1000"])
     elif bar_type == "Storage":
         ax1.set_ylabel("Storage (GB)", fontproperties=LABEL_FP)
 
