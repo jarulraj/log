@@ -168,7 +168,7 @@ EXPERIMENT_TYPE_STORAGE = 3
 EXPERIMENT_TYPE_LATENCY = 4
 
 STORAGE_LOGGING_TYPES = ("DRAM", "NVM", "DRAM", "NVM")
-STORAGE_LABELS = ("Table", "Index", "Log", "Checkpoint")
+STORAGE_LABELS = ("Table Heap", "Index", "Log", "Checkpoint")
 
 YCSB_THROUGHPUT_DIR = BASE_DIR + "/results/throughput/ycsb/"
 YCSB_THROUGHPUT_EXPERIMENT = 1
@@ -752,7 +752,7 @@ def create_nvm_latency_line_chart(datasets):
     makeGrid(ax1)
 
     # Y-AXIS
-    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS + 2))
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
 
@@ -1244,7 +1244,7 @@ def nvm_latency_plot():
 
         fileName = "nvm-latency-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT/2.0)
 
 # PCOMMIT LATENCY -- PLOT
 def pcommit_latency_plot():
