@@ -879,7 +879,7 @@ def create_asynchronous_mode_bar_chart(datasets):
     # X-AXIS
     x_labels = [str(i) for i in ASYNCHRONOUS_MODES]
     N = len(x_labels)
-    M = len(NVM_LOGGING_NAMES)
+    M = len(LOGGING_NAMES)
     ind = np.arange(N)
     margin = 0.15
     width = ((1.0 - 2 * margin) / M)
@@ -896,9 +896,7 @@ def create_asynchronous_mode_bar_chart(datasets):
 
         LOG.info("group_data = %s", str(group_data))
 
-        color_group = 0
-        if group == 1:
-            color_group = 3
+        color_group = group
 
         bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
                                       color=OPT_COLORS[color_group],
@@ -1304,12 +1302,12 @@ def asynchronous_mode_plot():
         ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
 
         datasets = []
-        for logging_type in NVM_LOGGING_TYPES:
+        for logging_type in LOGGING_TYPES:
 
             # figure out logging name and ycsb update name
-            nvm_logging_name = getLoggingName(logging_type)
+            logging_name = getLoggingName(logging_type)
 
-            data_file = ASYNCHRONOUS_MODE_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + ASYNCHRONOUS_MODE_CSV
+            data_file = ASYNCHRONOUS_MODE_DIR + "/" + ycsb_update_name + "/" + logging_name + "/" + ASYNCHRONOUS_MODE_CSV
 
             dataset = loadDataFile(len(ASYNCHRONOUS_MODES), 2, data_file)
             datasets.append(dataset)
