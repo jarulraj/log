@@ -155,9 +155,9 @@ FLUSH_MODES = ("1", "2")
 DEFAULT_FLUSH_MODE = 2
 FLUSH_MODES_NAMES = ("CLFLUSH", "CLWB")
 
-ASYNCHRONOUS_MODES = ("1", "3")
+ASYNCHRONOUS_MODES = ("1", "4", "3")
 DEFAULT_ASYNCHRONOUS_MODE = 1
-ASYNCHRONOUS_MODES_NAMES = ("Enabled", "Disabled")
+ASYNCHRONOUS_MODES_NAMES = ("Enabled", "No Writes", "Disabled")
 
 REPLICATION_MODES = ("1", "2", "3", "4")
 REPLICATION_MODES_NAMES = ("Disabled", "Async", "Semi-Sync", "Sync")
