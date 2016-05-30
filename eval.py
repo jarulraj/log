@@ -633,7 +633,7 @@ def create_ycsb_storage_bar_chart(datasets):
         bars[group_type] = ax1.bar(xbarticks, datasets[group_type], col_width,
                              color=OPT_STACK_COLORS[group_type - 1], linewidth=BAR_LINEWIDTH,
                              bottom = bottom_list)
-        bottom_list = map(add, bottom_list, datasets[type])
+        bottom_list = map(add, bottom_list, datasets[group_type])
 
     # GRID
     makeGrid(ax1)
