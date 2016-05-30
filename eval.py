@@ -856,13 +856,13 @@ def create_flush_mode_bar_chart(datasets):
     makeGrid(ax1)
 
     # Y-AXIS
-    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS + 2))
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
     ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("NVM Flush Mode", fontproperties=LABEL_FP)
+    ax1.set_xlabel("NVM Flush Instruction", fontproperties=LABEL_FP)
     ax1.set_xticklabels(FLUSH_MODES_NAMES)
 
     for label in ax1.get_yticklabels() :
@@ -1244,7 +1244,7 @@ def nvm_latency_plot():
 
         fileName = "nvm-latency-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT/2.0)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT/1.5)
 
 # PCOMMIT LATENCY -- PLOT
 def pcommit_latency_plot():
@@ -1292,7 +1292,7 @@ def flush_mode_plot():
 
         fileName = "flush-mode-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT/1.5)
 
 # ASYNCHRONOUS MODE -- PLOT
 def asynchronous_mode_plot():
