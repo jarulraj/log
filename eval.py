@@ -1297,26 +1297,26 @@ def flush_mode_plot():
 # ASYNCHRONOUS MODE -- PLOT
 def asynchronous_mode_plot():
 
-    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+    async_update_ratio = YCSB_UPDATE_RATIOS[2]
+    
+    ycsb_update_name = getYCSBUpdateName(async_update_ratio)
 
-        ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+    datasets = []
+    for logging_type in LOGGING_TYPES:
 
-        datasets = []
-        for logging_type in LOGGING_TYPES:
+        # figure out logging name and ycsb update name
+        logging_name = getLoggingName(logging_type)
 
-            # figure out logging name and ycsb update name
-            logging_name = getLoggingName(logging_type)
+        data_file = ASYNCHRONOUS_MODE_DIR + "/" + ycsb_update_name + "/" + logging_name + "/" + ASYNCHRONOUS_MODE_CSV
 
-            data_file = ASYNCHRONOUS_MODE_DIR + "/" + ycsb_update_name + "/" + logging_name + "/" + ASYNCHRONOUS_MODE_CSV
+        dataset = loadDataFile(len(ASYNCHRONOUS_MODES), 2, data_file)
+        datasets.append(dataset)
 
-            dataset = loadDataFile(len(ASYNCHRONOUS_MODES), 2, data_file)
-            datasets.append(dataset)
+    fig = create_asynchronous_mode_bar_chart(datasets)
 
-        fig = create_asynchronous_mode_bar_chart(datasets)
+    fileName = "asynchronous-mode-" + ycsb_update_name + ".pdf"
 
-        fileName = "asynchronous-mode-" + ycsb_update_name + ".pdf"
-
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH*1.5, height=OPT_GRAPH_HEIGHT/2.0)
 
 # MOTIVATION -- PLOT
 def motivation_plot():
@@ -1825,26 +1825,27 @@ def asynchronous_mode_eval():
     # CLEAN UP RESULT DIR
     clean_up_dir(ASYNCHRONOUS_MODE_DIR)
 
-    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
-        for logging_type in LOGGING_TYPES:
-            for asynchronous_mode in ASYNCHRONOUS_MODES:
+    async_update_ratio = YCSB_UPDATE_RATIOS[2]
 
-                # RUN EXPERIMENT
-                run_experiment(LOGGING,
-                               EXPERIMENT_TYPE_THROUGHPUT,
-                               logging_type,
-                               YCSB_BENCHMARK_TYPE,
-                               DEFAULT_CLIENT_COUNT,
-                               DEFAULT_DURATION,
-                               ycsb_update_ratio,
-                               DEFAULT_FLUSH_MODE,
-                               INVALID_NVM_LATENCY,
-                               INVALID_PCOMMIT_LATENCY,
-                               asynchronous_mode,
-                               INVALID_TRANSACTION_COUNT)
+    for logging_type in LOGGING_TYPES:
+        for asynchronous_mode in ASYNCHRONOUS_MODES:
 
-                # COLLECT STATS
-                collect_stats(ASYNCHRONOUS_MODE_DIR, ASYNCHRONOUS_MODE_CSV, ASYNCHRONOUS_MODE_EXPERIMENT)
+            # RUN EXPERIMENT
+            run_experiment(LOGGING,
+                           EXPERIMENT_TYPE_THROUGHPUT,
+                           logging_type,
+                           YCSB_BENCHMARK_TYPE,
+                           DEFAULT_CLIENT_COUNT,
+                           DEFAULT_DURATION,
+                           async_update_ratio,
+                           DEFAULT_FLUSH_MODE,
+                           INVALID_NVM_LATENCY,
+                           INVALID_PCOMMIT_LATENCY,
+                           asynchronous_mode,
+                           INVALID_TRANSACTION_COUNT)
+
+            # COLLECT STATS
+            collect_stats(ASYNCHRONOUS_MODE_DIR, ASYNCHRONOUS_MODE_CSV, ASYNCHRONOUS_MODE_EXPERIMENT)
 
 ###################################################################################
 # MAIN
