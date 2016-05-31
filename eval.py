@@ -1327,7 +1327,7 @@ def motivation_plot():
     fig = create_motivation_bar_chart(datasets, "Throughput")
 
     fileName = "motivation-" + "throughput.pdf"
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT/1.5)
 
     datasets = []
     for logging_type in NVM_LOGGING_TYPES:
@@ -1343,7 +1343,7 @@ def motivation_plot():
     fig = create_motivation_bar_chart(datasets, "Recovery")
 
     fileName = "motivation-" + "recovery.pdf"
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT/1.5)
 
     datasets = []
     for logging_type in NVM_LOGGING_TYPES:
@@ -1359,7 +1359,7 @@ def motivation_plot():
     fig = create_motivation_bar_chart(datasets, "Storage")
 
     fileName = "motivation-" + "storage.pdf"
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH/1.5, height=OPT_GRAPH_HEIGHT/1.5)
 
 # REPLICATION -- PLOT
 def replication_plot():
@@ -1873,8 +1873,8 @@ if __name__ == '__main__':
     parser.add_argument("-v", "--pcommit_latency_plot", help='plot pcommit_latency', action='store_true')
     parser.add_argument("-w", "--flush_mode_plot", help='plot flush_mode', action='store_true')
     parser.add_argument("-x", "--asynchronous_mode_plot", help='plot asynchronous_mode', action='store_true')
-    #parser.add_argument("-y", "--motivation_plot", help='plot motivation', action='store_true')
-    parser.add_argument("-y", "--replication_plot", help='plot replication', action='store_true')
+    parser.add_argument("-y", "--motivation_plot", help='plot motivation', action='store_true')
+    #parser.add_argument("-y", "--replication_plot", help='plot replication', action='store_true')
 
     args = parser.parse_args()
 
@@ -1952,11 +1952,11 @@ if __name__ == '__main__':
     if args.asynchronous_mode_plot:
         asynchronous_mode_plot()
 
-    #if args.motivation_plot:
-    #    motivation_plot()
+    if args.motivation_plot:
+        motivation_plot()
 
-    if args.replication_plot:
-        replication_plot()
+    #if args.replication_plot:
+    #    replication_plot()
 
     #create_legend_logging_types(False, False)
     #create_legend_logging_types(False, True)
