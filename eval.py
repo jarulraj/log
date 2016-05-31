@@ -1005,7 +1005,6 @@ def create_replication_chart(datasets, experiment_type):
 
     REPLICATION_MODES_NAMES_UPPER_CASE = [x.upper() for x in REPLICATION_MODES_NAMES]
 
-    idx = 0
     for group in xrange(len(datasets)):
         # GROUP
         group_data = []
@@ -1024,26 +1023,19 @@ def create_replication_chart(datasets, experiment_type):
         if group == 1:
             color_group = 3
 
-        if experiment_type == "Throughput":
-            ax1.plot(ind + 0.5, group_data,
-                 color=OPT_LINE_COLORS[color_group],
-                 linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE,
-                 label=str(group))
-            idx = idx + 1
-        elif experiment_type == "Latency":
-            bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
-                                          color=OPT_COLORS[color_group],
-                                          linewidth=BAR_LINEWIDTH,
-                                          hatch=OPT_PATTERNS[group])
+        bars[group] = ax1.bar(ind + margin + (group * width), group_data, width,
+                                      color=OPT_COLORS[color_group],
+                                      linewidth=BAR_LINEWIDTH,
+                                      hatch=OPT_PATTERNS[group])
 
 
     # GRID
     makeGrid(ax1)
 
     # Y-AXIS
-    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS + 2))
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
-
+    
     if experiment_type == "Throughput":
         ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
     elif experiment_type == "Latency":
