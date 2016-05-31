@@ -1082,7 +1082,7 @@ def ycsb_throughput_plot():
 
         fileName = "ycsb-" + "throughput-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/3.0)
 
 # TPCC THROUGHPUT -- PLOT
 def tpcc_throughput_plot():
@@ -1192,7 +1192,7 @@ def ycsb_latency_plot():
 
         fileName = "ycsb-" + "latency-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/3.0)
 
 # TPCC LATENCY -- PLOT
 def tpcc_latency_plot():
@@ -1382,7 +1382,7 @@ def replication_plot():
         fig = create_replication_chart(datasets, "Throughput")
 
         fileName = "replication-" + "throughput-" + ycsb_update_name + ".pdf"
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/3.0)
 
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
 
@@ -1403,7 +1403,7 @@ def replication_plot():
 
         fileName = "replication-" + "latency-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/2.0)
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/3.0)
 
 ###################################################################################
 # EVAL HELPERS
