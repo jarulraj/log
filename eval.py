@@ -66,7 +66,7 @@ OPT_LINE_WIDTH = 6.0
 OPT_MARKER_SIZE = 10.0
 DATA_LABELS = []
 
-OPT_STACK_COLORS = ('#BBBB88', '#EEDD99', '#EEC290', '#EEAA88')
+OPT_STACK_COLORS = ('#BBBB88', '#EEDD99', '#EE8899', '#EEC290')
 OPT_LINE_STYLES= ('-', ':', '--', '-.')
 
 # SET FONT
@@ -411,7 +411,7 @@ def create_legend_storage():
     fig = pylab.figure()
     ax1 = fig.add_subplot(111)
 
-    figlegend = pylab.figure(figsize=(8, 0.5))
+    figlegend = pylab.figure(figsize=(9, 0.5))
 
     num_items = 5;
     ind = np.arange(1)
@@ -548,7 +548,7 @@ def create_ycsb_recovery_bar_chart(datasets, ycsb):
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
-    ax1.set_ylabel("Recovery Latency (s)", fontproperties=LABEL_FP)
+    ax1.set_ylabel("Recovery Time (s)", fontproperties=LABEL_FP)
     ax1.set_yscale('log', nonposy='clip')
     ax1.tick_params(axis='y', which='minor', left='off', right='off')
     YLIMIT_MIN = math.pow(10, -2)
@@ -1035,7 +1035,7 @@ def create_replication_chart(datasets, experiment_type):
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
-    
+
     if experiment_type == "Throughput":
         ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
     elif experiment_type == "Latency":
@@ -1260,7 +1260,7 @@ def pcommit_latency_plot():
 
     fileName = "pcommit-latency.pdf"
 
-    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH*1.5, height=OPT_GRAPH_HEIGHT/2.0)
+    saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH*1.5, height=OPT_GRAPH_HEIGHT/3.0)
 
 # FLUSH MODE -- PLOT
 def flush_mode_plot():
@@ -1290,7 +1290,7 @@ def flush_mode_plot():
 def asynchronous_mode_plot():
 
     async_update_ratio = YCSB_UPDATE_RATIOS[2]
-    
+
     ycsb_update_name = getYCSBUpdateName(async_update_ratio)
 
     datasets = []
@@ -1962,5 +1962,5 @@ if __name__ == '__main__':
     #create_legend_logging_types(False, True)
     #create_legend_logging_types(True, False)
     #create_legend_logging_types(True, True)
-    #create_legend_storage()
+    create_legend_storage()
     #create_legend_update_ratio()
