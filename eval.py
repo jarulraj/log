@@ -165,7 +165,7 @@ REPLICATION_MODES_NAMES = ("Disabled", "Async", "Semi-Sync", "Sync")
 GROUP_COMMIT_INTERVALS = ("10", "100", "1000", "10000", "100000")
 DEFAULT_GROUP_COMMIT_INTERVAL = ("100")
 
-OPS_COUNT = ("1", "10", "100", "1000", "10000")
+OPS_COUNT = ("1", "10", "100")
 DEFAULT_OPS_COUNT = 1
 
 ABORT_MODES = ("0", "1")
@@ -2096,7 +2096,7 @@ def time_to_commit_eval():
     # CLEAN UP RESULT DIR
     clean_up_dir(TIME_TO_COMMIT_DIR)
 
-    ycsb_update_ratio = 0.9
+    ycsb_update_ratio = 1.0
     
     for logging_type in LOGGING_TYPES:
         for op_count in OPS_COUNT:
