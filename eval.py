@@ -162,7 +162,7 @@ ASYNCHRONOUS_MODES_NAMES = ("Enabled", "No Writes", "Disabled")
 REPLICATION_MODES = ("1", "2", "3", "4")
 REPLICATION_MODES_NAMES = ("Disabled", "Async", "Semi-Sync", "Sync")
 
-GROUP_COMMIT_INTERVALS = ("10", "100", "1000")
+GROUP_COMMIT_INTERVALS = ("10", "100", "1000", "10000", "100000")
 DEFAULT_GROUP_COMMIT_INTERVAL = ("100")
 
 EXPERIMENT_TYPE_THROUGHPUT = 1
@@ -1909,7 +1909,7 @@ def group_commit_eval():
                                group_commit_interval)
 
                 # COLLECT STATS
-                collect_stats(YCSB_THROUGHPUT_DIR, YCSB_THROUGHPUT_CSV, YCSB_THROUGHPUT_EXPERIMENT)
+                collect_stats(GROUP_COMMIT_DIR, GROUP_COMMIT_CSV, GROUP_COMMIT_EXPERIMENT)
 
 ###################################################################################
 # MAIN
