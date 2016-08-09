@@ -99,7 +99,7 @@ YAXIS_ROUND = 1000.0
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 PELOTON_BUILD_DIR = BASE_DIR + "/../peloton/build"
-LOGGING = PELOTON_BUILD_DIR + "/src/.libs/logger"
+LOGGING = PELOTON_BUILD_DIR + "/bin/logger"
 
 SDV_DIR = "/data/devel/sdv-tools/sdv-release"
 SDV_SCRIPT = SDV_DIR + "/ivt_pm_sdv.sh"
@@ -1526,14 +1526,15 @@ def collect_stats(result_dir,
         pcommit_latency = data[7]
         flush_mode = data[8]
         asynchronous_mode = data[9]
+        wait_timeout = data[10]
 
-        stat = data[10]
+        stat = data[11]
 
         # figure out logging name and ycsb update name
         logging_name = getLoggingName(logging_type)
 
         # MAKE RESULTS FILE DIR
-        if category == YCSB_THROUGHPUT_EXPERIMENT or category == YCSB_LATENCY_EXPERIMENT:
+        if category == YCSB_THROUGHPUT_EXPERIMENT or category == YCSB_LATENCY_EXPERIMENT or category == GROUP_COMMIT_EXPERIMENT:
             ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
             result_directory = result_dir + "/" + ycsb_update_name + "/" + logging_name
         elif category == TPCC_THROUGHPUT_EXPERIMENT or category == TPCC_LATENCY_EXPERIMENT:
@@ -1565,6 +1566,8 @@ def collect_stats(result_dir,
             result_file.write(str(flush_mode) + " , " + str(stat) + "\n")
         elif category == ASYNCHRONOUS_MODE_EXPERIMENT:
             result_file.write(str(asynchronous_mode) + " , " + str(stat) + "\n")
+        elif category == GROUP_COMMIT_EXPERIMENT:
+            result_file.write(str(wait_timeout) + " , " + str(stat) + "\n")
 
         result_file.close()
 
@@ -1888,7 +1891,7 @@ def group_commit_eval():
 
     # CLEAN UP RESULT DIR
     clean_up_dir(GROUP_COMMIT_DIR)
-    
+
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
         for logging_type in LOGGING_TYPES:
             for group_commit_interval in GROUP_COMMIT_INTERVALS:
