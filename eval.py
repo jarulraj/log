@@ -99,7 +99,7 @@ YAXIS_ROUND = 1000.0
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 PELOTON_BUILD_DIR = BASE_DIR + "/../peloton/build"
-LOGGING = PELOTON_BUILD_DIR + "/bin/logger"
+LOGGING = PELOTON_BUILD_DIR + "/src/.libs/logger"
 
 SDV_DIR = "/data/devel/sdv-tools/sdv-release"
 SDV_SCRIPT = SDV_DIR + "/ivt_pm_sdv.sh"
