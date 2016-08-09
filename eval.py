@@ -162,6 +162,9 @@ ASYNCHRONOUS_MODES_NAMES = ("Enabled", "No Writes", "Disabled")
 REPLICATION_MODES = ("1", "2", "3", "4")
 REPLICATION_MODES_NAMES = ("Disabled", "Async", "Semi-Sync", "Sync")
 
+GROUP_COMMIT_INTERVALS = ("10", "100", "1000")
+DEFAULT_GROUP_COMMIT_INTERVAL = ("100")
+
 EXPERIMENT_TYPE_THROUGHPUT = 1
 EXPERIMENT_TYPE_RECOVERY = 2
 EXPERIMENT_TYPE_STORAGE = 3
@@ -229,6 +232,10 @@ REPLICATION_THROUGHPUT_CSV = "replication_throughput.csv"
 REPLICATION_LATENCY_DIR = BASE_DIR + "/results/replication/latency/"
 REPLICATION_LATENCY_EXPERIMENT = 13
 REPLICATION_LATENCY_CSV = "replication_latency.csv"
+
+GROUP_COMMIT_DIR = BASE_DIR + "/results/group_commit/"
+GROUP_COMMIT_EXPERIMENT = 14
+GROUP_COMMIT_CSV = "group_commit.csv"
 
 ###################################################################################
 # UTILS
@@ -1405,6 +1412,31 @@ def replication_plot():
 
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/3.0)
 
+# GROUP COMMIT -- PLOT
+def group_commit_plot():
+
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+
+        ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+
+        datasets = []
+        for logging_type in LOGGING_TYPES:
+
+            # figure out logging name and ycsb update name
+            logging_name = getLoggingName(logging_type)
+
+            data_file = GROUP_COMMIT_DIR + "/" + ycsb_update_name + "/" + logging_name + "/" + YCSB_THROUGHPUT_CSV
+
+            dataset = loadDataFile(len(GROUP_COMMIT_INTERVALS), 2, data_file)
+            datasets.append(dataset)
+
+        fig = create_ycsb_throughput_line_chart(datasets)
+
+        fileName = "ycsb-" + "group-commit-" + ycsb_update_name + ".pdf"
+
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/3.0)
+
+
 ###################################################################################
 # EVAL HELPERS
 ###################################################################################
@@ -1428,7 +1460,8 @@ def run_experiment(program,
                    nvm_latency,
                    pcommit_latency,
                    asynchronous_mode,
-                   transaction_count):
+                   transaction_count,
+                   group_commit_interval):
 
     # cleanup
     subprocess.call(["rm -f " + OUTPUT_FILE], shell=True)
@@ -1450,7 +1483,8 @@ def run_experiment(program,
                          "-n", str(nvm_latency),
                          "-p", str(pcommit_latency),
                          "-a", str(asynchronous_mode),
-                         "-t", str(transaction_count)])
+                         "-t", str(transaction_count),
+                         "-w", str(group_commit_interval)])
     else:
         subprocess.call([program,
                          "-e", str(experiment_type),
@@ -1465,8 +1499,8 @@ def run_experiment(program,
                          "-n", str(nvm_latency),
                          "-p", str(pcommit_latency),
                          "-a", str(asynchronous_mode),
-                         "-t", str(transaction_count)])
-
+                         "-t", str(transaction_count),
+                         "-w", str(group_commit_interval)])
 
 
 # COLLECT STATS
@@ -1580,7 +1614,8 @@ def ycsb_throughput_eval():
                                INVALID_NVM_LATENCY,
                                INVALID_PCOMMIT_LATENCY,
                                DEFAULT_ASYNCHRONOUS_MODE,
-                               INVALID_TRANSACTION_COUNT)
+                               INVALID_TRANSACTION_COUNT,
+                               DEFAULT_GROUP_COMMIT_INTERVAL)
 
                 # COLLECT STATS
                 collect_stats(YCSB_THROUGHPUT_DIR, YCSB_THROUGHPUT_CSV, YCSB_THROUGHPUT_EXPERIMENT)
@@ -1606,7 +1641,8 @@ def tpcc_throughput_eval():
                            INVALID_NVM_LATENCY,
                            INVALID_PCOMMIT_LATENCY,
                            DEFAULT_ASYNCHRONOUS_MODE,
-                           INVALID_TRANSACTION_COUNT)
+                           INVALID_TRANSACTION_COUNT,
+                           DEFAULT_GROUP_COMMIT_INTERVAL)
 
             # COLLECT STATS
             collect_stats(TPCC_THROUGHPUT_DIR, TPCC_THROUGHPUT_CSV, TPCC_THROUGHPUT_EXPERIMENT)
@@ -1635,7 +1671,8 @@ def ycsb_recovery_eval():
                                INVALID_NVM_LATENCY,
                                INVALID_PCOMMIT_LATENCY,
                                DEFAULT_ASYNCHRONOUS_MODE,
-                               recovery_transaction_count)
+                               recovery_transaction_count,
+                               DEFAULT_GROUP_COMMIT_INTERVAL)
 
                 # COLLECT STATS
                 collect_stats(YCSB_RECOVERY_DIR, YCSB_RECOVERY_CSV, YCSB_RECOVERY_EXPERIMENT)
@@ -1663,7 +1700,8 @@ def tpcc_recovery_eval():
                                INVALID_NVM_LATENCY,
                                INVALID_PCOMMIT_LATENCY,
                                DEFAULT_ASYNCHRONOUS_MODE,
-                               recovery_transaction_count)
+                               recovery_transaction_count,
+                               DEFAULT_GROUP_COMMIT_INTERVAL)
 
                 # COLLECT STATS
                 collect_stats(TPCC_RECOVERY_DIR, TPCC_RECOVERY_CSV, TPCC_RECOVERY_EXPERIMENT)
@@ -1690,7 +1728,8 @@ def ycsb_latency_eval():
                                INVALID_NVM_LATENCY,
                                INVALID_PCOMMIT_LATENCY,
                                DEFAULT_ASYNCHRONOUS_MODE,
-                               INVALID_TRANSACTION_COUNT)
+                               INVALID_TRANSACTION_COUNT,
+                               DEFAULT_GROUP_COMMIT_INTERVAL)
 
                 # COLLECT STATS
                 collect_stats(YCSB_LATENCY_DIR, YCSB_LATENCY_CSV, YCSB_LATENCY_EXPERIMENT)
@@ -1716,7 +1755,8 @@ def tpcc_latency_eval():
                            INVALID_NVM_LATENCY,
                            INVALID_PCOMMIT_LATENCY,
                            DEFAULT_ASYNCHRONOUS_MODE,
-                           INVALID_TRANSACTION_COUNT)
+                           INVALID_TRANSACTION_COUNT,
+                           DEFAULT_GROUP_COMMIT_INTERVAL)
 
             # COLLECT STATS
             collect_stats(TPCC_LATENCY_DIR, TPCC_LATENCY_CSV, TPCC_LATENCY_EXPERIMENT)
@@ -1747,7 +1787,8 @@ def nvm_latency_eval():
                                nvm_latency,
                                INVALID_PCOMMIT_LATENCY,
                                DEFAULT_ASYNCHRONOUS_MODE,
-                               INVALID_TRANSACTION_COUNT)
+                               INVALID_TRANSACTION_COUNT,
+                               DEFAULT_GROUP_COMMIT_INTERVAL)
 
                 # COLLECT STATS
                 collect_stats(NVM_LATENCY_DIR, NVM_LATENCY_CSV, NVM_LATENCY_EXPERIMENT)
@@ -1778,7 +1819,8 @@ def pcommit_latency_eval():
                                INVALID_NVM_LATENCY,
                                pcommit_latency,
                                DEFAULT_ASYNCHRONOUS_MODE,
-                               INVALID_TRANSACTION_COUNT)
+                               INVALID_TRANSACTION_COUNT,
+                               DEFAULT_GROUP_COMMIT_INTERVAL)
 
                 # COLLECT STATS
                 collect_stats(PCOMMIT_LATENCY_DIR, PCOMMIT_LATENCY_CSV, PCOMMIT_LATENCY_EXPERIMENT)
@@ -1805,7 +1847,8 @@ def flush_mode_eval():
                                INVALID_NVM_LATENCY,
                                INVALID_PCOMMIT_LATENCY,
                                DEFAULT_ASYNCHRONOUS_MODE,
-                               INVALID_TRANSACTION_COUNT)
+                               INVALID_TRANSACTION_COUNT,
+                               DEFAULT_GROUP_COMMIT_INTERVAL)
 
                 # COLLECT STATS
                 collect_stats(FLUSH_MODE_DIR, FLUSH_MODE_CSV, FLUSH_MODE_EXPERIMENT)
@@ -1834,10 +1877,39 @@ def asynchronous_mode_eval():
                            INVALID_NVM_LATENCY,
                            INVALID_PCOMMIT_LATENCY,
                            asynchronous_mode,
-                           INVALID_TRANSACTION_COUNT)
+                           INVALID_TRANSACTION_COUNT,
+                           DEFAULT_GROUP_COMMIT_INTERVAL)
 
             # COLLECT STATS
             collect_stats(ASYNCHRONOUS_MODE_DIR, ASYNCHRONOUS_MODE_CSV, ASYNCHRONOUS_MODE_EXPERIMENT)
+
+# GROUP COMMIT -- EVAL
+def group_commit_eval():
+
+    # CLEAN UP RESULT DIR
+    clean_up_dir(GROUP_COMMIT_DIR)
+    
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+        for logging_type in LOGGING_TYPES:
+            for group_commit_interval in GROUP_COMMIT_INTERVALS:
+
+                # RUN EXPERIMENT
+                run_experiment(LOGGING,
+                               EXPERIMENT_TYPE_THROUGHPUT,
+                               logging_type,
+                               YCSB_BENCHMARK_TYPE,
+                               DEFAULT_CLIENT_COUNT,
+                               DEFAULT_DURATION,
+                               ycsb_update_ratio,
+                               DEFAULT_FLUSH_MODE,
+                               INVALID_NVM_LATENCY,
+                               INVALID_PCOMMIT_LATENCY,
+                               DEFAULT_ASYNCHRONOUS_MODE,
+                               INVALID_TRANSACTION_COUNT,
+                               group_commit_interval)
+
+                # COLLECT STATS
+                collect_stats(YCSB_THROUGHPUT_DIR, YCSB_THROUGHPUT_CSV, YCSB_THROUGHPUT_EXPERIMENT)
 
 ###################################################################################
 # MAIN
@@ -1860,6 +1932,7 @@ if __name__ == '__main__':
     parser.add_argument("-i", "--pcommit_latency_eval", help='eval pcommit_latency', action='store_true')
     parser.add_argument("-j", "--flush_mode_eval", help='eval flush_mode', action='store_true')
     parser.add_argument("-k", "--asynchronous_mode_eval", help='eval asynchronous_mode', action='store_true')
+    parser.add_argument("-l", "--group_commit_eval", help='eval group_commit', action='store_true')
 
     parser.add_argument("-m", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
     parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
@@ -1872,7 +1945,8 @@ if __name__ == '__main__':
     parser.add_argument("-u", "--nvm_latency_plot", help='plot nvm_latency', action='store_true')
     parser.add_argument("-v", "--pcommit_latency_plot", help='plot pcommit_latency', action='store_true')
     parser.add_argument("-w", "--flush_mode_plot", help='plot flush_mode', action='store_true')
-    parser.add_argument("-x", "--asynchronous_mode_plot", help='plot asynchronous_mode', action='store_true')
+    #parser.add_argument("-x", "--asynchronous_mode_plot", help='plot asynchronous_mode', action='store_true')
+    parser.add_argument("-x", "--group_commit_plot", help='plot group commit', action='store_true')
     parser.add_argument("-y", "--motivation_plot", help='plot motivation', action='store_true')
     #parser.add_argument("-y", "--replication_plot", help='plot replication', action='store_true')
 
@@ -1914,6 +1988,9 @@ if __name__ == '__main__':
     if args.asynchronous_mode_eval:
         asynchronous_mode_eval()
 
+    if args.group_commit_eval:
+        group_commit_eval()
+
     ## PLOT
 
     if args.ycsb_throughput_plot:
@@ -1949,14 +2026,17 @@ if __name__ == '__main__':
     if args.flush_mode_plot:
         flush_mode_plot()
 
-    if args.asynchronous_mode_plot:
-        asynchronous_mode_plot()
+    #if args.asynchronous_mode_plot:
+    #    asynchronous_mode_plot()
 
     if args.motivation_plot:
         motivation_plot()
 
     #if args.replication_plot:
     #    replication_plot()
+
+    if args.group_commit_plot:
+        group_commit_plot()
 
     #create_legend_logging_types(False, False)
     #create_legend_logging_types(False, True)
