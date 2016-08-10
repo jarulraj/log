@@ -131,6 +131,9 @@ LOGGING_NAMES = ("nvm-wbl", "ssd-wbl", "hdd-wbl", "nvm-wal", "ssd-wal", "hdd-wal
 NVM_LOGGING_TYPES = (1, 4)
 NVM_LOGGING_NAMES = ("nvm-wbl", "nvm-wal")
 
+WAL_LOGGING_TYPES = (4, 5, 6)
+WAL_LOGGING_NAMES = ("nvm-wal", "ssd-wal", "hdd-wal")
+
 SCALE_FACTOR = 1
 DATABASE_FILE_SIZE = 4096  # DATABASE FILE SIZE (MB)
 
@@ -1729,7 +1732,7 @@ def goetz_plot():
             ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
     
             datasets = []
-            for logging_type in LOGGING_TYPES:
+            for logging_type in WAL_LOGGING_TYPES:
     
                 # figure out logging name and ycsb update name
                 logging_name = getLoggingName(logging_type)
