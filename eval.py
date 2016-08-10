@@ -175,6 +175,12 @@ ABORT_MODES = ("0", "1")
 ABORT_MODE_NAMES = ("commit", "abort")
 DEFAULT_ABORT_MODE = "0"
 
+DEFAULT_GOETZ_MODE = "0"
+REDO_LENGTHS = ("1", "10", "100", "1000")
+DEFAULT_REDO_LENGTH = ("0")
+REDO_FRACTIONS = ("0.001", "0.01", "0.1", "1")
+DEFAULT_REDO_FRACTION = ("0")
+
 EXPERIMENT_TYPE_THROUGHPUT = 1
 EXPERIMENT_TYPE_RECOVERY = 2
 EXPERIMENT_TYPE_STORAGE = 3
@@ -254,6 +260,10 @@ TIME_TO_COMMIT_CSV = "time_to_commit.csv"
 LONG_RUNNING_TXN_DIR = BASE_DIR + "/results/long_running_txn/"
 LONG_RUNNING_TXN_EXPERIMENT = 16
 LONG_RUNNING_TXN_CSV = "long_running_txn.csv"
+
+GOETZ_DIR = BASE_DIR + "/results/goetz/"
+GOETZ_EXPERIMENT = 17
+GOETZ_CSV = "goetz.csv"
 
 ###################################################################################
 # UTILS
@@ -1239,6 +1249,56 @@ def create_long_running_txn_line_chart(datasets):
 
     return (fig)
 
+def create_goetz_line_chart(datasets):
+    fig = plot.figure()
+    ax1 = fig.add_subplot(111)
+
+    # X-AXIS
+    x_labels = [str(i) for i in REDO_FRACTIONS]
+    N = len(x_labels)
+    ind = np.arange(N)
+
+    idx = 0
+    for group in xrange(len(datasets)):
+        # GROUP
+        group_data = []
+
+        for line in  xrange(len(datasets[group])):
+            for col in  xrange(len(datasets[group][line])):
+                if col == 1:
+                    group_data.append(datasets[group][line][col])
+
+        LOG.info("group_data = %s", str(group_data))
+
+        ax1.plot(ind + 0.5, group_data,
+                 color=OPT_COLORS[idx],
+                 linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE,
+                 label=str(group))
+
+        idx = idx + 1
+
+
+    # GRID
+    makeGrid(ax1)
+
+    # Y-AXIS
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
+    ax1.minorticks_off()
+    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+
+    # X-AXIS
+    ax1.set_xticks(ind + 0.5)
+    ax1.set_xlabel("Redo Fraction", fontproperties=LABEL_FP)
+    ax1.set_xticklabels(x_labels)
+    #ax1.set_xlim([0.25, N - 0.25])
+
+    for label in ax1.get_yticklabels() :
+        label.set_fontproperties(TICK_FP)
+    for label in ax1.get_xticklabels() :
+        label.set_fontproperties(TICK_FP)
+
+    return (fig)
+
 ###################################################################################
 # PLOT HELPERS
 ###################################################################################
@@ -1659,6 +1719,33 @@ def long_running_txn_plot():
 
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/3.0)
 
+# GOETZ -- PLOT
+def goetz_plot():
+
+    for redo_length in REDO_LENGTHS:
+
+        for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+    
+            ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+    
+            datasets = []
+            for logging_type in LOGGING_TYPES:
+    
+                # figure out logging name and ycsb update name
+                logging_name = getLoggingName(logging_type)
+    
+                data_file = GOETZ_DIR + "/" + str(redo_length) + "/" + ycsb_update_name + "/" + logging_name + "/" + GOETZ_CSV
+    
+                dataset = loadDataFile(len(REDO_FRACTIONS), 2, data_file)
+                datasets.append(dataset)
+    
+            fig = create_goetz_line_chart(datasets)
+    
+            fileName = "goetz-" + ycsb_update_name + "-" + str(redo_length) + ".pdf"
+    
+            saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/3.0)
+            
+
 ###################################################################################
 # EVAL HELPERS
 ###################################################################################
@@ -1686,7 +1773,10 @@ def run_experiment(program,
                    group_commit_interval,
                    op_count,
                    abort_mode,
-                   long_running_txn_count):
+                   long_running_txn_count,
+                   goetz_mode,
+                   redo_length,
+                   redo_fraction):
 
     # cleanup
     subprocess.call(["rm -f " + OUTPUT_FILE], shell=True)
@@ -1712,7 +1802,10 @@ def run_experiment(program,
                          "-w", str(group_commit_interval),
                          "-o", str(op_count),
                          "-r", str(abort_mode),
-                         "-q", str(long_running_txn_count)])
+                         "-q", str(long_running_txn_count),
+                         "-s", str(goetz_mode),
+                         "-m", str(redo_length),
+                         "-j", str(redo_fraction)])
     else:
         subprocess.call([program,
                          "-e", str(experiment_type),
@@ -1731,7 +1824,10 @@ def run_experiment(program,
                          "-w", str(group_commit_interval),
                          "-o", str(op_count),
                          "-r", str(abort_mode),
-                         "-q", str(long_running_txn_count)])
+                         "-q", str(long_running_txn_count),
+                         "-s", str(goetz_mode),
+                         "-m", str(redo_length),
+                         "-j", str(redo_fraction)])
 
 
 # COLLECT STATS
@@ -1761,8 +1857,11 @@ def collect_stats(result_dir,
         op_count = data[11]
         abort_mode = data[12]
         long_running_txn_count = data[13]
+        goetz_mode = data[14]
+        redo_fraction = data[15]
+        redo_length = data[16]
 
-        stat = data[14]
+        stat = data[17]
 
         # figure out logging name and ycsb update name
         logging_name = getLoggingName(logging_type)
@@ -1782,6 +1881,9 @@ def collect_stats(result_dir,
             result_directory = result_dir + "/" + ycsb_update_name + "/" + logging_name
         elif category == TIME_TO_COMMIT_EXPERIMENT:
             result_directory = result_dir + "/" + getAbortModeName(int(abort_mode)) + "/" + logging_name
+        elif category == GOETZ_EXPERIMENT:
+            ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+            result_directory = result_dir + "/" + str(redo_length) + "/" + ycsb_update_name + "/" + logging_name
 
         if not os.path.exists(result_directory):
             os.makedirs(result_directory)
@@ -1809,6 +1911,8 @@ def collect_stats(result_dir,
             result_file.write(str(op_count) + " , " + str(stat) + "\n")
         elif category == LONG_RUNNING_TXN_EXPERIMENT:
             result_file.write(str(long_running_txn_count) + " , " + str(stat) + "\n")
+        elif category == GOETZ_EXPERIMENT:
+            result_file.write(str(redo_fraction) + " , " + str(stat) + "\n")
 
         result_file.close()
 
@@ -1862,7 +1966,10 @@ def ycsb_throughput_eval():
                                DEFAULT_GROUP_COMMIT_INTERVAL,
                                DEFAULT_OPS_COUNT,
                                DEFAULT_ABORT_MODE,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT)
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_GOETZ_MODE,
+                               DEFAULT_REDO_LENGTH,
+                               DEFAULT_REDO_FRACTION)
 
                 # COLLECT STATS
                 collect_stats(YCSB_THROUGHPUT_DIR, YCSB_THROUGHPUT_CSV, YCSB_THROUGHPUT_EXPERIMENT)
@@ -1892,7 +1999,10 @@ def tpcc_throughput_eval():
                            DEFAULT_GROUP_COMMIT_INTERVAL,
                            DEFAULT_OPS_COUNT,
                            DEFAULT_ABORT_MODE,
-                           DEFAULT_LONG_RUNNING_TXN_COUNT)
+                           DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                           DEFAULT_GOETZ_MODE,
+                           DEFAULT_REDO_LENGTH,
+                           DEFAULT_REDO_FRACTION)
 
             # COLLECT STATS
             collect_stats(TPCC_THROUGHPUT_DIR, TPCC_THROUGHPUT_CSV, TPCC_THROUGHPUT_EXPERIMENT)
@@ -1925,7 +2035,10 @@ def ycsb_recovery_eval():
                                DEFAULT_GROUP_COMMIT_INTERVAL,
                                DEFAULT_OPS_COUNT,
                                DEFAULT_ABORT_MODE,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT)
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_GOETZ_MODE,
+                               DEFAULT_REDO_LENGTH,
+                               DEFAULT_REDO_FRACTION)
 
                 # COLLECT STATS
                 collect_stats(YCSB_RECOVERY_DIR, YCSB_RECOVERY_CSV, YCSB_RECOVERY_EXPERIMENT)
@@ -1957,7 +2070,10 @@ def tpcc_recovery_eval():
                                DEFAULT_GROUP_COMMIT_INTERVAL,
                                DEFAULT_OPS_COUNT,
                                DEFAULT_ABORT_MODE,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT)
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_GOETZ_MODE,
+                               DEFAULT_REDO_LENGTH,
+                               DEFAULT_REDO_FRACTION)
 
                 # COLLECT STATS
                 collect_stats(TPCC_RECOVERY_DIR, TPCC_RECOVERY_CSV, TPCC_RECOVERY_EXPERIMENT)
@@ -1988,7 +2104,10 @@ def ycsb_latency_eval():
                                DEFAULT_GROUP_COMMIT_INTERVAL,
                                DEFAULT_OPS_COUNT,
                                DEFAULT_ABORT_MODE,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT)
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_GOETZ_MODE,
+                               DEFAULT_REDO_LENGTH,
+                               DEFAULT_REDO_FRACTION)
 
                 # COLLECT STATS
                 collect_stats(YCSB_LATENCY_DIR, YCSB_LATENCY_CSV, YCSB_LATENCY_EXPERIMENT)
@@ -2018,7 +2137,10 @@ def tpcc_latency_eval():
                            DEFAULT_GROUP_COMMIT_INTERVAL,
                            DEFAULT_OPS_COUNT,
                            DEFAULT_ABORT_MODE,
-                           DEFAULT_LONG_RUNNING_TXN_COUNT)
+                           DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                           DEFAULT_GOETZ_MODE,
+                           DEFAULT_REDO_LENGTH,
+                           DEFAULT_REDO_FRACTION)
 
             # COLLECT STATS
             collect_stats(TPCC_LATENCY_DIR, TPCC_LATENCY_CSV, TPCC_LATENCY_EXPERIMENT)
@@ -2053,7 +2175,10 @@ def nvm_latency_eval():
                                DEFAULT_GROUP_COMMIT_INTERVAL,
                                DEFAULT_OPS_COUNT,
                                DEFAULT_ABORT_MODE,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT)
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_GOETZ_MODE,
+                               DEFAULT_REDO_LENGTH,
+                               DEFAULT_REDO_FRACTION)
 
                 # COLLECT STATS
                 collect_stats(NVM_LATENCY_DIR, NVM_LATENCY_CSV, NVM_LATENCY_EXPERIMENT)
@@ -2088,7 +2213,10 @@ def pcommit_latency_eval():
                                DEFAULT_GROUP_COMMIT_INTERVAL,
                                DEFAULT_OPS_COUNT,
                                DEFAULT_ABORT_MODE,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT)
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_GOETZ_MODE,
+                               DEFAULT_REDO_LENGTH,
+                               DEFAULT_REDO_FRACTION)
 
                 # COLLECT STATS
                 collect_stats(PCOMMIT_LATENCY_DIR, PCOMMIT_LATENCY_CSV, PCOMMIT_LATENCY_EXPERIMENT)
@@ -2119,7 +2247,10 @@ def flush_mode_eval():
                                DEFAULT_GROUP_COMMIT_INTERVAL,
                                DEFAULT_OPS_COUNT,
                                DEFAULT_ABORT_MODE,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT)
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_GOETZ_MODE,
+                               DEFAULT_REDO_LENGTH,
+                               DEFAULT_REDO_FRACTION)
 
                 # COLLECT STATS
                 collect_stats(FLUSH_MODE_DIR, FLUSH_MODE_CSV, FLUSH_MODE_EXPERIMENT)
@@ -2152,7 +2283,10 @@ def asynchronous_mode_eval():
                            DEFAULT_GROUP_COMMIT_INTERVAL,
                            DEFAULT_OPS_COUNT,
                            DEFAULT_ABORT_MODE,
-                           DEFAULT_LONG_RUNNING_TXN_COUNT)
+                           DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                           DEFAULT_GOETZ_MODE,
+                           DEFAULT_REDO_LENGTH,
+                           DEFAULT_REDO_FRACTION)
 
             # COLLECT STATS
             collect_stats(ASYNCHRONOUS_MODE_DIR, ASYNCHRONOUS_MODE_CSV, ASYNCHRONOUS_MODE_EXPERIMENT)
@@ -2183,7 +2317,10 @@ def group_commit_eval():
                                group_commit_interval,
                                DEFAULT_OPS_COUNT,
                                DEFAULT_ABORT_MODE,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT)
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_GOETZ_MODE,
+                               DEFAULT_REDO_LENGTH,
+                               DEFAULT_REDO_FRACTION)
 
                 # COLLECT STATS
                 collect_stats(GROUP_COMMIT_DIR, GROUP_COMMIT_CSV, GROUP_COMMIT_EXPERIMENT)
@@ -2216,7 +2353,10 @@ def time_to_commit_eval():
                                DEFAULT_GROUP_COMMIT_INTERVAL,
                                op_count,
                                abort_mode,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT)
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_GOETZ_MODE,
+                               DEFAULT_REDO_LENGTH,
+                               DEFAULT_REDO_FRACTION)
 
                 # COLLECT STATS
                 collect_stats(TIME_TO_COMMIT_DIR, TIME_TO_COMMIT_CSV, TIME_TO_COMMIT_EXPERIMENT)
@@ -2247,10 +2387,50 @@ def long_running_txn_eval():
                                DEFAULT_GROUP_COMMIT_INTERVAL,
                                DEFAULT_OPS_COUNT,
                                DEFAULT_ABORT_MODE,
-                               long_running_txn_count)
+                               long_running_txn_count,
+                               DEFAULT_GOETZ_MODE,
+                               DEFAULT_REDO_LENGTH,
+                               DEFAULT_REDO_FRACTION)
 
                 # COLLECT STATS
                 collect_stats(LONG_RUNNING_TXN_DIR, LONG_RUNNING_TXN_CSV, LONG_RUNNING_TXN_EXPERIMENT)
+
+# GOETZ -- EVAL
+def goetz_eval():
+
+    # CLEAN UP RESULT DIR
+    clean_up_dir(GOETZ_DIR)
+
+    goetz_mode = "1";
+    
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+        for logging_type in LOGGING_TYPES:
+            for redo_length in REDO_LENGTHS:
+                for redo_fraction in REDO_FRACTIONS:
+
+                    # RUN EXPERIMENT
+                    run_experiment(LOGGING,
+                                   EXPERIMENT_TYPE_THROUGHPUT,
+                                   logging_type,
+                                   YCSB_BENCHMARK_TYPE,
+                                   DEFAULT_CLIENT_COUNT,
+                                   DEFAULT_DURATION,
+                                   ycsb_update_ratio,
+                                   DEFAULT_FLUSH_MODE,
+                                   INVALID_NVM_LATENCY,
+                                   INVALID_PCOMMIT_LATENCY,
+                                   DEFAULT_ASYNCHRONOUS_MODE,
+                                   INVALID_TRANSACTION_COUNT,
+                                   DEFAULT_GROUP_COMMIT_INTERVAL,
+                                   DEFAULT_OPS_COUNT,
+                                   DEFAULT_ABORT_MODE,
+                                   DEFAULT_LONG_RUNNING_TXN_COUNT,
+                                   goetz_mode,
+                                   redo_length,
+                                   redo_fraction)
+    
+                    # COLLECT STATS
+                    collect_stats(GOETZ_DIR, GOETZ_CSV, GOETZ_EXPERIMENT)
 
 ###################################################################################
 # MAIN
@@ -2267,8 +2447,8 @@ if __name__ == '__main__':
     #parser.add_argument("-b", "--tpcc_throughput_eval", help='eval tpcc_throughput', action='store_true')
     #parser.add_argument("-c", "--ycsb_recovery_eval", help='eval ycsb_recovery', action='store_true')
     #parser.add_argument("-d", "--tpcc_recovery_eval", help='eval tpcc_recovery', action='store_true')
-    parser.add_argument("-e", "--ycsb_latency_eval", help='eval ycsb_latency', action='store_true')
-    parser.add_argument("-f", "--tpcc_latency_eval", help='eval tpcc_latency', action='store_true')
+    #parser.add_argument("-e", "--ycsb_latency_eval", help='eval ycsb_latency', action='store_true')
+    #parser.add_argument("-f", "--tpcc_latency_eval", help='eval tpcc_latency', action='store_true')
     parser.add_argument("-g", "--nvm_latency_eval", help='eval nvm_latency', action='store_true')
     parser.add_argument("-i", "--pcommit_latency_eval", help='eval pcommit_latency', action='store_true')
     parser.add_argument("-j", "--flush_mode_eval", help='eval flush_mode', action='store_true')
@@ -2277,13 +2457,14 @@ if __name__ == '__main__':
     parser.add_argument("-a", "--group_commit_eval", help='eval group_commit', action='store_true')
     parser.add_argument("-b", "--time_to_commit_eval", help='eval time_to_commit', action='store_true')
     parser.add_argument("-c", "--long_running_txn_eval", help='eval long_running_txn', action='store_true')
+    parser.add_argument("-d", "--goetz_eval", help='eval goetz', action='store_true')
 
     #parser.add_argument("-m", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
     #parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
     #parser.add_argument("-o", "--ycsb_recovery_plot", help='plot ycsb_recovery', action='store_true')
     #parser.add_argument("-p", "--tpcc_recovery_plot", help='plot tpcc_recovery', action='store_true')
-    parser.add_argument("-q", "--ycsb_storage_plot", help='plot ycsb_storage', action='store_true')
-    parser.add_argument("-r", "--tpcc_storage_plot", help='plot tpcc_storage', action='store_true')
+    #parser.add_argument("-q", "--ycsb_storage_plot", help='plot ycsb_storage', action='store_true')
+    #parser.add_argument("-r", "--tpcc_storage_plot", help='plot tpcc_storage', action='store_true')
     parser.add_argument("-s", "--ycsb_latency_plot", help='plot ycsb_latency', action='store_true')
     parser.add_argument("-t", "--tpcc_latency_plot", help='plot tpcc_latency', action='store_true')
     parser.add_argument("-u", "--nvm_latency_plot", help='plot nvm_latency', action='store_true')
@@ -2296,6 +2477,7 @@ if __name__ == '__main__':
     parser.add_argument("-m", "--group_commit_plot", help='plot group commit', action='store_true')
     parser.add_argument("-n", "--time_to_commit_plot", help='eval time_to_commit', action='store_true')
     parser.add_argument("-o", "--long_running_txn_plot", help='eval long_running_txn', action='store_true')
+    parser.add_argument("-p", "--goetz_plot", help='eval goetz', action='store_true')
 
     args = parser.parse_args()
 
@@ -2317,11 +2499,11 @@ if __name__ == '__main__':
     #if args.tpcc_recovery_eval:
     #    tpcc_recovery_eval()
 
-    if args.ycsb_latency_eval:
-        ycsb_latency_eval()
+    #if args.ycsb_latency_eval:
+    #    ycsb_latency_eval()
 
-    if args.tpcc_latency_eval:
-        tpcc_latency_eval()
+    #if args.tpcc_latency_eval:
+    #    tpcc_latency_eval()
 
     if args.nvm_latency_eval:
         nvm_latency_eval()
@@ -2344,6 +2526,9 @@ if __name__ == '__main__':
     if args.long_running_txn_eval:
         long_running_txn_eval()
 
+    if args.goetz_eval:
+        goetz_eval()
+
     ## PLOT
 
     #if args.ycsb_throughput_plot:
@@ -2358,11 +2543,11 @@ if __name__ == '__main__':
     #if args.tpcc_recovery_plot:
     #    tpcc_recovery_plot()
 
-    if args.ycsb_storage_plot:
-        ycsb_storage_plot()
+    #if args.ycsb_storage_plot:
+    #    ycsb_storage_plot()
 
-    if args.tpcc_storage_plot:
-        tpcc_storage_plot()
+    #if args.tpcc_storage_plot:
+    #    tpcc_storage_plot()
 
     if args.ycsb_latency_plot:
         ycsb_latency_plot()
@@ -2396,6 +2581,9 @@ if __name__ == '__main__':
 
     if args.long_running_txn_plot:
         long_running_txn_plot()
+
+    if args.goetz_plot:
+        goetz_plot()
 
     #create_legend_logging_types(False, False)
     #create_legend_logging_types(False, True)
