@@ -184,6 +184,9 @@ DEFAULT_REDO_LENGTH = ("0")
 REDO_FRACTIONS = ("0.001", "0.01", "0.1", "1")
 DEFAULT_REDO_FRACTION = ("0")
 
+HYBRID_STORAGE_RATIOS = ("0", "0.1", "0.5", "1")
+DEFAULT_STORAGE_RATIO = "0"
+
 EXPERIMENT_TYPE_THROUGHPUT = 1
 EXPERIMENT_TYPE_RECOVERY = 2
 EXPERIMENT_TYPE_STORAGE = 3
@@ -267,6 +270,10 @@ LONG_RUNNING_TXN_CSV = "long_running_txn.csv"
 GOETZ_DIR = BASE_DIR + "/results/goetz/"
 GOETZ_EXPERIMENT = 17
 GOETZ_CSV = "goetz.csv"
+
+HYBRID_DIR = BASE_DIR + "/results/hybrid/"
+HYBRID_EXPERIMENT = 18
+HYBRID_CSV = "hybrid.csv"
 
 ###################################################################################
 # UTILS
@@ -1302,6 +1309,56 @@ def create_goetz_line_chart(datasets):
 
     return (fig)
 
+def create_hybrid_line_chart(datasets):
+    fig = plot.figure()
+    ax1 = fig.add_subplot(111)
+
+    # X-AXIS
+    x_labels = [str(i) for i in CLIENT_COUNTS]
+    N = len(x_labels)
+    ind = np.arange(N)
+
+    idx = 0
+    for group in xrange(len(datasets)):
+        # GROUP
+        group_data = []
+
+        for line in  xrange(len(datasets[group])):
+            for col in  xrange(len(datasets[group][line])):
+                if col == 1:
+                    group_data.append(datasets[group][line][col])
+
+        LOG.info("group_data = %s", str(group_data))
+
+        ax1.plot(ind + 0.5, group_data,
+                 color=OPT_COLORS[idx],
+                 linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE,
+                 label=str(group))
+
+        idx = idx + 1
+
+
+    # GRID
+    makeGrid(ax1)
+
+    # Y-AXIS
+    ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
+    ax1.minorticks_off()
+    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+
+    # X-AXIS
+    ax1.set_xticks(ind + 0.5)
+    ax1.set_xlabel("Number of Client Threads", fontproperties=LABEL_FP)
+    ax1.set_xticklabels(x_labels)
+    #ax1.set_xlim([0.25, N - 0.25])
+
+    for label in ax1.get_yticklabels() :
+        label.set_fontproperties(TICK_FP)
+    for label in ax1.get_xticklabels() :
+        label.set_fontproperties(TICK_FP)
+
+    return (fig)
+
 ###################################################################################
 # PLOT HELPERS
 ###################################################################################
@@ -1747,7 +1804,27 @@ def goetz_plot():
             fileName = "goetz-" + ycsb_update_name + "-" + str(redo_length) + ".pdf"
     
             saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/3.0)
-            
+
+# HYBRID -- PLOT
+def hybrid_plot():
+
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+
+        ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+
+        datasets = []
+        for hybrid_storage_ratio in HYBRID_STORAGE_RATIOS:
+
+            data_file = HYBRID_DIR + "/" + str(hybrid_storage_ratio) + "/" + ycsb_update_name + "/" + HYBRID_CSV
+
+            dataset = loadDataFile(len(CLIENT_COUNTS), 2, data_file)
+            datasets.append(dataset)
+
+        fig = create_hybrid_line_chart(datasets)
+
+        fileName = "hybrid-" + ycsb_update_name + ".pdf"
+
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/3.0)            
 
 ###################################################################################
 # EVAL HELPERS
@@ -1779,7 +1856,8 @@ def run_experiment(program,
                    long_running_txn_count,
                    goetz_mode,
                    redo_length,
-                   redo_fraction):
+                   redo_fraction,
+                   hybrid_storage_ratio):
 
     # cleanup
     subprocess.call(["rm -f " + OUTPUT_FILE], shell=True)
@@ -1808,7 +1886,8 @@ def run_experiment(program,
                          "-q", str(long_running_txn_count),
                          "-s", str(goetz_mode),
                          "-m", str(redo_length),
-                         "-j", str(redo_fraction)])
+                         "-j", str(redo_fraction),
+                         "-x", str(hybrid_storage_ratio)])
     else:
         subprocess.call([program,
                          "-e", str(experiment_type),
@@ -1830,7 +1909,8 @@ def run_experiment(program,
                          "-q", str(long_running_txn_count),
                          "-s", str(goetz_mode),
                          "-m", str(redo_length),
-                         "-j", str(redo_fraction)])
+                         "-j", str(redo_fraction),
+                         "-x", str(hybrid_storage_ratio)])
 
 
 # COLLECT STATS
@@ -1863,8 +1943,9 @@ def collect_stats(result_dir,
         goetz_mode = data[14]
         redo_fraction = data[15]
         redo_length = data[16]
+        hybrid_storage_ratio = data[17]
 
-        stat = data[17]
+        stat = data[18]
 
         # figure out logging name and ycsb update name
         logging_name = getLoggingName(logging_type)
@@ -1885,8 +1966,10 @@ def collect_stats(result_dir,
         elif category == TIME_TO_COMMIT_EXPERIMENT:
             result_directory = result_dir + "/" + getAbortModeName(int(abort_mode)) + "/" + logging_name
         elif category == GOETZ_EXPERIMENT:
-            ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
             result_directory = result_dir + "/" + str(redo_length) + "/" + ycsb_update_name + "/" + logging_name
+        elif category == HYBRID_EXPERIMENT:
+            ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
+            result_directory = result_dir + "/" + str(hybrid_storage_ratio) + "/" + ycsb_update_name
 
         if not os.path.exists(result_directory):
             os.makedirs(result_directory)
@@ -1916,6 +1999,8 @@ def collect_stats(result_dir,
             result_file.write(str(long_running_txn_count) + " , " + str(stat) + "\n")
         elif category == GOETZ_EXPERIMENT:
             result_file.write(str(redo_fraction) + " , " + str(stat) + "\n")
+        elif category == HYBRID_EXPERIMENT:
+            result_file.write(str(backend_count) + " , " + str(stat) + "\n")
 
         result_file.close()
 
@@ -1972,7 +2057,8 @@ def ycsb_throughput_eval():
                                DEFAULT_LONG_RUNNING_TXN_COUNT,                              
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
-                               DEFAULT_REDO_FRACTION)
+                               DEFAULT_REDO_FRACTION,
+                               DEFAULT_STORAGE_RATIO)
 
                 # COLLECT STATS
                 collect_stats(YCSB_THROUGHPUT_DIR, YCSB_THROUGHPUT_CSV, YCSB_THROUGHPUT_EXPERIMENT)
@@ -2005,7 +2091,8 @@ def tpcc_throughput_eval():
                            DEFAULT_LONG_RUNNING_TXN_COUNT,                              
                            DEFAULT_GOETZ_MODE,
                            DEFAULT_REDO_LENGTH,
-                           DEFAULT_REDO_FRACTION)
+                           DEFAULT_REDO_FRACTION,
+                           DEFAULT_STORAGE_RATIO)
 
             # COLLECT STATS
             collect_stats(TPCC_THROUGHPUT_DIR, TPCC_THROUGHPUT_CSV, TPCC_THROUGHPUT_EXPERIMENT)
@@ -2041,7 +2128,8 @@ def ycsb_recovery_eval():
                                DEFAULT_LONG_RUNNING_TXN_COUNT,                              
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
-                               DEFAULT_REDO_FRACTION)
+                               DEFAULT_REDO_FRACTION,
+                               DEFAULT_STORAGE_RATIO)
 
                 # COLLECT STATS
                 collect_stats(YCSB_RECOVERY_DIR, YCSB_RECOVERY_CSV, YCSB_RECOVERY_EXPERIMENT)
@@ -2076,7 +2164,8 @@ def tpcc_recovery_eval():
                                DEFAULT_LONG_RUNNING_TXN_COUNT,                              
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
-                               DEFAULT_REDO_FRACTION)
+                               DEFAULT_REDO_FRACTION,
+                               DEFAULT_STORAGE_RATIO)
 
                 # COLLECT STATS
                 collect_stats(TPCC_RECOVERY_DIR, TPCC_RECOVERY_CSV, TPCC_RECOVERY_EXPERIMENT)
@@ -2110,7 +2199,8 @@ def ycsb_latency_eval():
                                DEFAULT_LONG_RUNNING_TXN_COUNT,                              
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
-                               DEFAULT_REDO_FRACTION)
+                               DEFAULT_REDO_FRACTION,
+                               DEFAULT_STORAGE_RATIO)
 
                 # COLLECT STATS
                 collect_stats(YCSB_LATENCY_DIR, YCSB_LATENCY_CSV, YCSB_LATENCY_EXPERIMENT)
@@ -2143,7 +2233,8 @@ def tpcc_latency_eval():
                            DEFAULT_LONG_RUNNING_TXN_COUNT,                              
                            DEFAULT_GOETZ_MODE,
                            DEFAULT_REDO_LENGTH,
-                           DEFAULT_REDO_FRACTION)
+                           DEFAULT_REDO_FRACTION,
+                           DEFAULT_STORAGE_RATIO)
 
             # COLLECT STATS
             collect_stats(TPCC_LATENCY_DIR, TPCC_LATENCY_CSV, TPCC_LATENCY_EXPERIMENT)
@@ -2181,7 +2272,8 @@ def nvm_latency_eval():
                                DEFAULT_LONG_RUNNING_TXN_COUNT,                              
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
-                               DEFAULT_REDO_FRACTION)
+                               DEFAULT_REDO_FRACTION,
+                               DEFAULT_STORAGE_RATIO)
 
                 # COLLECT STATS
                 collect_stats(NVM_LATENCY_DIR, NVM_LATENCY_CSV, NVM_LATENCY_EXPERIMENT)
@@ -2219,7 +2311,8 @@ def pcommit_latency_eval():
                                DEFAULT_LONG_RUNNING_TXN_COUNT,                              
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
-                               DEFAULT_REDO_FRACTION)
+                               DEFAULT_REDO_FRACTION,
+                               DEFAULT_STORAGE_RATIO)
 
                 # COLLECT STATS
                 collect_stats(PCOMMIT_LATENCY_DIR, PCOMMIT_LATENCY_CSV, PCOMMIT_LATENCY_EXPERIMENT)
@@ -2253,7 +2346,8 @@ def flush_mode_eval():
                                DEFAULT_LONG_RUNNING_TXN_COUNT,                              
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
-                               DEFAULT_REDO_FRACTION)
+                               DEFAULT_REDO_FRACTION,
+                               DEFAULT_STORAGE_RATIO)
 
                 # COLLECT STATS
                 collect_stats(FLUSH_MODE_DIR, FLUSH_MODE_CSV, FLUSH_MODE_EXPERIMENT)
@@ -2289,7 +2383,8 @@ def asynchronous_mode_eval():
                            DEFAULT_LONG_RUNNING_TXN_COUNT,                              
                            DEFAULT_GOETZ_MODE,
                            DEFAULT_REDO_LENGTH,
-                           DEFAULT_REDO_FRACTION)
+                           DEFAULT_REDO_FRACTION,
+                           DEFAULT_STORAGE_RATIO)
 
             # COLLECT STATS
             collect_stats(ASYNCHRONOUS_MODE_DIR, ASYNCHRONOUS_MODE_CSV, ASYNCHRONOUS_MODE_EXPERIMENT)
@@ -2323,7 +2418,8 @@ def group_commit_eval():
                                DEFAULT_LONG_RUNNING_TXN_COUNT,                              
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
-                               DEFAULT_REDO_FRACTION)
+                               DEFAULT_REDO_FRACTION,
+                               DEFAULT_STORAGE_RATIO)
 
                 # COLLECT STATS
                 collect_stats(GROUP_COMMIT_DIR, GROUP_COMMIT_CSV, GROUP_COMMIT_EXPERIMENT)
@@ -2359,7 +2455,8 @@ def time_to_commit_eval():
                                DEFAULT_LONG_RUNNING_TXN_COUNT,                              
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
-                               DEFAULT_REDO_FRACTION)
+                               DEFAULT_REDO_FRACTION,
+                               DEFAULT_STORAGE_RATIO)
 
                 # COLLECT STATS
                 collect_stats(TIME_TO_COMMIT_DIR, TIME_TO_COMMIT_CSV, TIME_TO_COMMIT_EXPERIMENT)
@@ -2393,7 +2490,8 @@ def long_running_txn_eval():
                                long_running_txn_count,
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
-                               DEFAULT_REDO_FRACTION)
+                               DEFAULT_REDO_FRACTION,
+                               DEFAULT_STORAGE_RATIO)
 
                 # COLLECT STATS
                 collect_stats(LONG_RUNNING_TXN_DIR, LONG_RUNNING_TXN_CSV, LONG_RUNNING_TXN_EXPERIMENT)
@@ -2430,10 +2528,49 @@ def goetz_eval():
                                    DEFAULT_LONG_RUNNING_TXN_COUNT,
                                    goetz_mode,
                                    redo_length,
-                                   redo_fraction)
+                                   redo_fraction,
+                                   DEFAULT_STORAGE_RATIO)
     
                     # COLLECT STATS
                     collect_stats(GOETZ_DIR, GOETZ_CSV, GOETZ_EXPERIMENT)
+
+# HYBRID -- EVAL
+def hybrid_eval():
+
+    # CLEAN UP RESULT DIR
+    clean_up_dir(HYBRID_DIR)
+
+    logging_type = 1
+    
+    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
+        for client_count in CLIENT_COUNTS:
+            for hybrid_storage_ratio in HYBRID_STORAGE_RATIOS:
+
+                # RUN EXPERIMENT
+                run_experiment(LOGGING,
+                               EXPERIMENT_TYPE_THROUGHPUT,
+                               logging_type,
+                               YCSB_BENCHMARK_TYPE,
+                               client_count,
+                               DEFAULT_DURATION,
+                               ycsb_update_ratio,
+                               DEFAULT_FLUSH_MODE,
+                               INVALID_NVM_LATENCY,
+                               INVALID_PCOMMIT_LATENCY,
+                               DEFAULT_ASYNCHRONOUS_MODE,
+                               INVALID_TRANSACTION_COUNT,
+                               DEFAULT_GROUP_COMMIT_INTERVAL,
+                               DEFAULT_OPS_COUNT,
+                               DEFAULT_ABORT_MODE,
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,
+                               DEFAULT_GOETZ_MODE,
+                               DEFAULT_REDO_LENGTH,
+                               DEFAULT_REDO_FRACTION,
+                               hybrid_storage_ratio)
+
+                # COLLECT STATS
+                collect_stats(HYBRID_DIR, HYBRID_CSV, HYBRID_EXPERIMENT)
+
 
 ###################################################################################
 # MAIN
@@ -2461,6 +2598,7 @@ if __name__ == '__main__':
     parser.add_argument("-b", "--time_to_commit_eval", help='eval time_to_commit', action='store_true')
     parser.add_argument("-c", "--long_running_txn_eval", help='eval long_running_txn', action='store_true')
     parser.add_argument("-d", "--goetz_eval", help='eval goetz', action='store_true')
+    parser.add_argument("-e", "--hybrid_eval", help='eval hybrid', action='store_true')
 
     #parser.add_argument("-m", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
     #parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
@@ -2481,6 +2619,7 @@ if __name__ == '__main__':
     parser.add_argument("-n", "--time_to_commit_plot", help='eval time_to_commit', action='store_true')
     parser.add_argument("-o", "--long_running_txn_plot", help='eval long_running_txn', action='store_true')
     parser.add_argument("-p", "--goetz_plot", help='eval goetz', action='store_true')
+    parser.add_argument("-q", "--hybrid_plot", help='eval hybrid', action='store_true')
 
     args = parser.parse_args()
 
@@ -2531,6 +2670,9 @@ if __name__ == '__main__':
 
     if args.goetz_eval:
         goetz_eval()
+
+    if args.hybrid_eval:
+        hybrid_eval()
 
     ## PLOT
 
@@ -2587,6 +2729,9 @@ if __name__ == '__main__':
 
     if args.goetz_plot:
         goetz_plot()
+
+    if args.hybrid_plot:
+        hybrid_plot()
 
     #create_legend_logging_types(False, False)
     #create_legend_logging_types(False, True)
