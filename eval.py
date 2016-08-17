@@ -162,8 +162,8 @@ ASYNCHRONOUS_MODES = ("1", "4", "3")
 DEFAULT_ASYNCHRONOUS_MODE = 1
 ASYNCHRONOUS_MODES_NAMES = ("Enabled", "No Writes", "Disabled")
 
-REPLICATION_MODES = ("1", "2", "3", "4")
-REPLICATION_MODES_NAMES = ("Disabled", "Async", "Semi-Sync", "Sync")
+REPLICATION_MODES = ("1", "2", "3")
+REPLICATION_MODES_NAMES = ("Disabled", "Async", "Sync")
 
 GROUP_COMMIT_INTERVALS = ("10", "100", "1000", "10000", "100000")
 DEFAULT_GROUP_COMMIT_INTERVAL = ("200")
@@ -1687,26 +1687,6 @@ def replication_plot():
         fileName = "replication-" + "throughput-" + ycsb_update_name + ".pdf"
         saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/3.0)
 
-    for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
-
-        ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
-
-        datasets = []
-        for logging_type in NVM_LOGGING_TYPES:
-
-            # figure out logging name and ycsb update name
-            nvm_logging_name = getLoggingName(logging_type)
-
-            data_file = REPLICATION_LATENCY_DIR + "/" + ycsb_update_name + "/" + nvm_logging_name + "/" + REPLICATION_LATENCY_CSV
-
-            dataset = loadDataFile(len(REPLICATION_MODES), 2, data_file)
-            datasets.append(dataset)
-
-        fig = create_replication_chart(datasets, "Latency")
-
-        fileName = "replication-" + "latency-" + ycsb_update_name + ".pdf"
-
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/3.0)
 
 # GROUP COMMIT -- PLOT
 def group_commit_plot():
