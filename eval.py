@@ -2563,8 +2563,8 @@ if __name__ == '__main__':
 
     parser.add_argument("-z", "--enable-sdv", help='enable sdv', action='store_true')
 
-    #parser.add_argument("-a", "--ycsb_throughput_eval", help='eval ycsb_throughput', action='store_true')
-    #parser.add_argument("-b", "--tpcc_throughput_eval", help='eval tpcc_throughput', action='store_true')
+    parser.add_argument("-a", "--ycsb_throughput_eval", help='eval ycsb_throughput', action='store_true')
+    parser.add_argument("-b", "--tpcc_throughput_eval", help='eval tpcc_throughput', action='store_true')
     #parser.add_argument("-c", "--ycsb_recovery_eval", help='eval ycsb_recovery', action='store_true')
     #parser.add_argument("-d", "--tpcc_recovery_eval", help='eval tpcc_recovery', action='store_true')
     #parser.add_argument("-e", "--ycsb_latency_eval", help='eval ycsb_latency', action='store_true')
@@ -2574,14 +2574,14 @@ if __name__ == '__main__':
     parser.add_argument("-j", "--flush_mode_eval", help='eval flush_mode', action='store_true')
     parser.add_argument("-k", "--asynchronous_mode_eval", help='eval asynchronous_mode', action='store_true')
 
-    parser.add_argument("-a", "--group_commit_eval", help='eval group_commit', action='store_true')
-    parser.add_argument("-b", "--time_to_commit_eval", help='eval time_to_commit', action='store_true')
+    #parser.add_argument("-a", "--group_commit_eval", help='eval group_commit', action='store_true')
+    #parser.add_argument("-b", "--time_to_commit_eval", help='eval time_to_commit', action='store_true')
     parser.add_argument("-c", "--long_running_txn_eval", help='eval long_running_txn', action='store_true')
     parser.add_argument("-d", "--goetz_eval", help='eval goetz', action='store_true')
     parser.add_argument("-e", "--hybrid_eval", help='eval hybrid', action='store_true')
 
-    #parser.add_argument("-m", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
-    #parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
+    parser.add_argument("-m", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
+    parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
     #parser.add_argument("-o", "--ycsb_recovery_plot", help='plot ycsb_recovery', action='store_true')
     #parser.add_argument("-p", "--tpcc_recovery_plot", help='plot tpcc_recovery', action='store_true')
     #parser.add_argument("-q", "--ycsb_storage_plot", help='plot ycsb_storage', action='store_true')
@@ -2595,8 +2595,8 @@ if __name__ == '__main__':
     parser.add_argument("-y", "--replication_plot", help='plot replication', action='store_true')
     #parser.add_argument("-m", "--motivation_plot", help='plot motivation', action='store_true')
 
-    parser.add_argument("-m", "--group_commit_plot", help='plot group commit', action='store_true')
-    parser.add_argument("-n", "--time_to_commit_plot", help='eval time_to_commit', action='store_true')
+    #parser.add_argument("-m", "--group_commit_plot", help='plot group commit', action='store_true')
+    #parser.add_argument("-n", "--time_to_commit_plot", help='eval time_to_commit', action='store_true')
     parser.add_argument("-o", "--long_running_txn_plot", help='eval long_running_txn', action='store_true')
     parser.add_argument("-p", "--goetz_plot", help='eval goetz', action='store_true')
     parser.add_argument("-q", "--hybrid_plot", help='eval hybrid', action='store_true')
@@ -2609,11 +2609,11 @@ if __name__ == '__main__':
 
     ## EVAL
 
-    #if args.ycsb_throughput_eval:
-    #    ycsb_throughput_eval()
+    if args.ycsb_throughput_eval:
+        ycsb_throughput_eval()
 
-    #if args.tpcc_throughput_eval:
-    #    tpcc_throughput_eval()
+    if args.tpcc_throughput_eval:
+        tpcc_throughput_eval()
 
     #if args.ycsb_recovery_eval:
     #    ycsb_recovery_eval()
@@ -2639,11 +2639,11 @@ if __name__ == '__main__':
     if args.asynchronous_mode_eval:
         asynchronous_mode_eval()
 
-    if args.group_commit_eval:
-        group_commit_eval()
+    #if args.group_commit_eval:
+    #    group_commit_eval()
 
-    if args.time_to_commit_eval:
-        time_to_commit_eval()
+    #if args.time_to_commit_eval:
+    #    time_to_commit_eval()
 
     if args.long_running_txn_eval:
         long_running_txn_eval()
@@ -2656,11 +2656,11 @@ if __name__ == '__main__':
 
     ## PLOT
 
-    #if args.ycsb_throughput_plot:
-    #    ycsb_throughput_plot()
+    if args.ycsb_throughput_plot:
+        ycsb_throughput_plot()
 
-    #if args.tpcc_throughput_plot:
-    #    tpcc_throughput_plot()
+    if args.tpcc_throughput_plot:
+        tpcc_throughput_plot()
 
     #if args.ycsb_recovery_plot:
     #    ycsb_recovery_plot()
@@ -2698,11 +2698,11 @@ if __name__ == '__main__':
     if args.replication_plot:
         replication_plot()
 
-    if args.group_commit_plot:
-        group_commit_plot()
+    #if args.group_commit_plot:
+    #    group_commit_plot()
 
-    if args.time_to_commit_plot:
-        time_to_commit_plot()
+    #if args.time_to_commit_plot:
+    #    time_to_commit_plot()
 
     if args.long_running_txn_plot:
         long_running_txn_plot()
