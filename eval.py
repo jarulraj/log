@@ -2567,8 +2567,8 @@ if __name__ == '__main__':
     parser.add_argument("-b", "--tpcc_throughput_eval", help='eval tpcc_throughput', action='store_true')
     #parser.add_argument("-c", "--ycsb_recovery_eval", help='eval ycsb_recovery', action='store_true')
     #parser.add_argument("-d", "--tpcc_recovery_eval", help='eval tpcc_recovery', action='store_true')
-    #parser.add_argument("-e", "--ycsb_latency_eval", help='eval ycsb_latency', action='store_true')
-    #parser.add_argument("-f", "--tpcc_latency_eval", help='eval tpcc_latency', action='store_true')
+    parser.add_argument("-e", "--ycsb_latency_eval", help='eval ycsb_latency', action='store_true')
+    parser.add_argument("-f", "--tpcc_latency_eval", help='eval tpcc_latency', action='store_true')
     parser.add_argument("-g", "--nvm_latency_eval", help='eval nvm_latency', action='store_true')
     parser.add_argument("-i", "--pcommit_latency_eval", help='eval pcommit_latency', action='store_true')
     parser.add_argument("-j", "--flush_mode_eval", help='eval flush_mode', action='store_true')
@@ -2578,7 +2578,7 @@ if __name__ == '__main__':
     #parser.add_argument("-b", "--time_to_commit_eval", help='eval time_to_commit', action='store_true')
     parser.add_argument("-c", "--long_running_txn_eval", help='eval long_running_txn', action='store_true')
     parser.add_argument("-d", "--goetz_eval", help='eval goetz', action='store_true')
-    parser.add_argument("-e", "--hybrid_eval", help='eval hybrid', action='store_true')
+    #parser.add_argument("-e", "--hybrid_eval", help='eval hybrid', action='store_true')
 
     parser.add_argument("-m", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
     parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
@@ -2621,11 +2621,11 @@ if __name__ == '__main__':
     #if args.tpcc_recovery_eval:
     #    tpcc_recovery_eval()
 
-    #if args.ycsb_latency_eval:
-    #    ycsb_latency_eval()
+    if args.ycsb_latency_eval:
+        ycsb_latency_eval()
 
-    #if args.tpcc_latency_eval:
-    #    tpcc_latency_eval()
+    if args.tpcc_latency_eval:
+        tpcc_latency_eval()
 
     if args.nvm_latency_eval:
         nvm_latency_eval()
@@ -2651,8 +2651,8 @@ if __name__ == '__main__':
     if args.goetz_eval:
         goetz_eval()
 
-    if args.hybrid_eval:
-        hybrid_eval()
+    #if args.hybrid_eval:
+    #    hybrid_eval()
 
     ## PLOT
 
