@@ -1765,24 +1765,24 @@ def goetz_plot():
     for redo_length in REDO_LENGTHS:
 
         for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
-    
+
             ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
-    
+
             datasets = []
             for logging_type in WAL_LOGGING_TYPES:
-    
+
                 # figure out logging name and ycsb update name
                 logging_name = getLoggingName(logging_type)
-    
+
                 data_file = GOETZ_DIR + "/" + str(redo_length) + "/" + ycsb_update_name + "/" + logging_name + "/" + GOETZ_CSV
-    
+
                 dataset = loadDataFile(len(REDO_FRACTIONS), 2, data_file)
                 datasets.append(dataset)
-    
+
             fig = create_goetz_line_chart(datasets)
-    
+
             fileName = "goetz-" + ycsb_update_name + "-" + str(redo_length) + ".pdf"
-    
+
             saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/3.0)
 
 # HYBRID -- PLOT
@@ -1804,7 +1804,7 @@ def hybrid_plot():
 
         fileName = "hybrid-" + ycsb_update_name + ".pdf"
 
-        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/3.0)            
+        saveGraph(fig, fileName, width= OPT_GRAPH_WIDTH, height=OPT_GRAPH_HEIGHT/3.0)
 
 ###################################################################################
 # EVAL HELPERS
@@ -2035,7 +2035,7 @@ def ycsb_throughput_eval():
                                DEFAULT_GROUP_COMMIT_INTERVAL,
                                DEFAULT_OPS_COUNT,
                                DEFAULT_ABORT_MODE,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
                                DEFAULT_REDO_FRACTION,
@@ -2069,7 +2069,7 @@ def tpcc_throughput_eval():
                            DEFAULT_GROUP_COMMIT_INTERVAL,
                            DEFAULT_OPS_COUNT,
                            DEFAULT_ABORT_MODE,
-                           DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                           DEFAULT_LONG_RUNNING_TXN_COUNT,
                            DEFAULT_GOETZ_MODE,
                            DEFAULT_REDO_LENGTH,
                            DEFAULT_REDO_FRACTION,
@@ -2106,7 +2106,7 @@ def ycsb_recovery_eval():
                                DEFAULT_GROUP_COMMIT_INTERVAL,
                                DEFAULT_OPS_COUNT,
                                DEFAULT_ABORT_MODE,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
                                DEFAULT_REDO_FRACTION,
@@ -2142,7 +2142,7 @@ def tpcc_recovery_eval():
                                DEFAULT_GROUP_COMMIT_INTERVAL,
                                DEFAULT_OPS_COUNT,
                                DEFAULT_ABORT_MODE,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
                                DEFAULT_REDO_FRACTION,
@@ -2177,7 +2177,7 @@ def ycsb_latency_eval():
                                DEFAULT_GROUP_COMMIT_INTERVAL,
                                DEFAULT_OPS_COUNT,
                                DEFAULT_ABORT_MODE,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
                                DEFAULT_REDO_FRACTION,
@@ -2211,7 +2211,7 @@ def tpcc_latency_eval():
                            DEFAULT_GROUP_COMMIT_INTERVAL,
                            DEFAULT_OPS_COUNT,
                            DEFAULT_ABORT_MODE,
-                           DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                           DEFAULT_LONG_RUNNING_TXN_COUNT,
                            DEFAULT_GOETZ_MODE,
                            DEFAULT_REDO_LENGTH,
                            DEFAULT_REDO_FRACTION,
@@ -2250,7 +2250,7 @@ def nvm_latency_eval():
                                DEFAULT_GROUP_COMMIT_INTERVAL,
                                DEFAULT_OPS_COUNT,
                                DEFAULT_ABORT_MODE,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
                                DEFAULT_REDO_FRACTION,
@@ -2289,7 +2289,7 @@ def pcommit_latency_eval():
                                DEFAULT_GROUP_COMMIT_INTERVAL,
                                DEFAULT_OPS_COUNT,
                                DEFAULT_ABORT_MODE,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
                                DEFAULT_REDO_FRACTION,
@@ -2324,7 +2324,7 @@ def flush_mode_eval():
                                DEFAULT_GROUP_COMMIT_INTERVAL,
                                DEFAULT_OPS_COUNT,
                                DEFAULT_ABORT_MODE,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
                                DEFAULT_REDO_FRACTION,
@@ -2361,7 +2361,7 @@ def asynchronous_mode_eval():
                            DEFAULT_GROUP_COMMIT_INTERVAL,
                            DEFAULT_OPS_COUNT,
                            DEFAULT_ABORT_MODE,
-                           DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                           DEFAULT_LONG_RUNNING_TXN_COUNT,
                            DEFAULT_GOETZ_MODE,
                            DEFAULT_REDO_LENGTH,
                            DEFAULT_REDO_FRACTION,
@@ -2396,7 +2396,7 @@ def group_commit_eval():
                                group_commit_interval,
                                DEFAULT_OPS_COUNT,
                                DEFAULT_ABORT_MODE,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
                                DEFAULT_REDO_FRACTION,
@@ -2433,7 +2433,7 @@ def time_to_commit_eval():
                                DEFAULT_GROUP_COMMIT_INTERVAL,
                                op_count,
                                abort_mode,
-                               DEFAULT_LONG_RUNNING_TXN_COUNT,                              
+                               DEFAULT_LONG_RUNNING_TXN_COUNT,
                                DEFAULT_GOETZ_MODE,
                                DEFAULT_REDO_LENGTH,
                                DEFAULT_REDO_FRACTION,
@@ -2484,7 +2484,7 @@ def goetz_eval():
     clean_up_dir(GOETZ_DIR)
 
     goetz_mode = "1";
-    
+
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
         for logging_type in LOGGING_TYPES:
             for redo_length in REDO_LENGTHS:
@@ -2511,7 +2511,7 @@ def goetz_eval():
                                    redo_length,
                                    redo_fraction,
                                    DEFAULT_STORAGE_RATIO)
-    
+
                     # COLLECT STATS
                     collect_stats(GOETZ_DIR, GOETZ_CSV, GOETZ_EXPERIMENT)
 
@@ -2522,7 +2522,7 @@ def hybrid_eval():
     clean_up_dir(HYBRID_DIR)
 
     logging_type = 1
-    
+
     for ycsb_update_ratio in YCSB_UPDATE_RATIOS:
         for client_count in CLIENT_COUNTS:
             for hybrid_storage_ratio in HYBRID_STORAGE_RATIOS:
@@ -2581,8 +2581,8 @@ if __name__ == '__main__':
     parser.add_argument("-d", "--goetz_eval", help='eval goetz', action='store_true')
     parser.add_argument("-e", "--hybrid_eval", help='eval hybrid', action='store_true')
 
-    #parser.add_argument("-m", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
-    #parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
+    parser.add_argument("-m", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
+    parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
     #parser.add_argument("-o", "--ycsb_recovery_plot", help='plot ycsb_recovery', action='store_true')
     #parser.add_argument("-p", "--tpcc_recovery_plot", help='plot tpcc_recovery', action='store_true')
     #parser.add_argument("-q", "--ycsb_storage_plot", help='plot ycsb_storage', action='store_true')
@@ -2596,8 +2596,8 @@ if __name__ == '__main__':
     parser.add_argument("-y", "--replication_plot", help='plot replication', action='store_true')
     #parser.add_argument("-m", "--motivation_plot", help='plot motivation', action='store_true')
 
-    parser.add_argument("-m", "--group_commit_plot", help='plot group commit', action='store_true')
-    parser.add_argument("-n", "--time_to_commit_plot", help='eval time_to_commit', action='store_true')
+    #parser.add_argument("-m", "--group_commit_plot", help='plot group commit', action='store_true')
+    #parser.add_argument("-n", "--time_to_commit_plot", help='eval time_to_commit', action='store_true')
     parser.add_argument("-o", "--long_running_txn_plot", help='eval long_running_txn', action='store_true')
     parser.add_argument("-p", "--goetz_plot", help='eval goetz', action='store_true')
     parser.add_argument("-q", "--hybrid_plot", help='eval hybrid', action='store_true')
@@ -2657,11 +2657,11 @@ if __name__ == '__main__':
 
     ## PLOT
 
-    #if args.ycsb_throughput_plot:
-    #    ycsb_throughput_plot()
+    if args.ycsb_throughput_plot:
+        ycsb_throughput_plot()
 
-    #if args.tpcc_throughput_plot:
-    #    tpcc_throughput_plot()
+    if args.tpcc_throughput_plot:
+        tpcc_throughput_plot()
 
     #if args.ycsb_recovery_plot:
     #    ycsb_recovery_plot()
@@ -2699,11 +2699,11 @@ if __name__ == '__main__':
     if args.replication_plot:
         replication_plot()
 
-    if args.group_commit_plot:
-        group_commit_plot()
+    #if args.group_commit_plot:
+    #    group_commit_plot()
 
-    if args.time_to_commit_plot:
-        time_to_commit_plot()
+    #if args.time_to_commit_plot:
+    #    time_to_commit_plot()
 
     if args.long_running_txn_plot:
         long_running_txn_plot()
