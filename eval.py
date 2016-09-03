@@ -134,6 +134,9 @@ NVM_LOGGING_NAMES = ("nvm-wbl", "nvm-wal")
 WAL_LOGGING_TYPES = (4, 5, 6)
 WAL_LOGGING_NAMES = ("nvm-wal", "ssd-wal", "hdd-wal")
 
+WBL_LOGGING_TYPES = (1, 2, 3)
+WBL_LOGGING_NAMES = ("nvm-wbl", "ssd-wbl", "hdd-wbl")
+
 SCALE_FACTOR = 1
 DATABASE_FILE_SIZE = 4096  # DATABASE FILE SIZE (MB)
 
@@ -1743,10 +1746,10 @@ def long_running_txn_plot():
         ycsb_update_name = getYCSBUpdateName(ycsb_update_ratio)
 
         datasets = []
-        for logging_type in LOGGING_TYPES:
+        for wbl_logging_type in WBL_LOGGING_TYPES:
 
             # figure out logging name and ycsb update name
-            logging_name = getLoggingName(logging_type)
+            logging_name = getLoggingName(wbl_logging_type)
 
             data_file = LONG_RUNNING_TXN_DIR + "/" + ycsb_update_name + "/" + logging_name + "/" + LONG_RUNNING_TXN_CSV
 
@@ -2581,8 +2584,8 @@ if __name__ == '__main__':
     parser.add_argument("-d", "--goetz_eval", help='eval goetz', action='store_true')
     parser.add_argument("-e", "--hybrid_eval", help='eval hybrid', action='store_true')
 
-    parser.add_argument("-m", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
-    parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
+    #parser.add_argument("-m", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
+    #parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
     #parser.add_argument("-o", "--ycsb_recovery_plot", help='plot ycsb_recovery', action='store_true')
     #parser.add_argument("-p", "--tpcc_recovery_plot", help='plot tpcc_recovery', action='store_true')
     #parser.add_argument("-q", "--ycsb_storage_plot", help='plot ycsb_storage', action='store_true')
@@ -2596,8 +2599,8 @@ if __name__ == '__main__':
     parser.add_argument("-y", "--replication_plot", help='plot replication', action='store_true')
     #parser.add_argument("-m", "--motivation_plot", help='plot motivation', action='store_true')
 
-    #parser.add_argument("-m", "--group_commit_plot", help='plot group commit', action='store_true')
-    #parser.add_argument("-n", "--time_to_commit_plot", help='eval time_to_commit', action='store_true')
+    parser.add_argument("-m", "--group_commit_plot", help='plot group commit', action='store_true')
+    parser.add_argument("-n", "--time_to_commit_plot", help='eval time_to_commit', action='store_true')
     parser.add_argument("-o", "--long_running_txn_plot", help='eval long_running_txn', action='store_true')
     parser.add_argument("-p", "--goetz_plot", help='eval goetz', action='store_true')
     parser.add_argument("-q", "--hybrid_plot", help='eval hybrid', action='store_true')
@@ -2657,11 +2660,11 @@ if __name__ == '__main__':
 
     ## PLOT
 
-    if args.ycsb_throughput_plot:
-        ycsb_throughput_plot()
+    #if args.ycsb_throughput_plot:
+    #    ycsb_throughput_plot()
 
-    if args.tpcc_throughput_plot:
-        tpcc_throughput_plot()
+    #if args.tpcc_throughput_plot:
+    #    tpcc_throughput_plot()
 
     #if args.ycsb_recovery_plot:
     #    ycsb_recovery_plot()
@@ -2699,11 +2702,11 @@ if __name__ == '__main__':
     if args.replication_plot:
         replication_plot()
 
-    #if args.group_commit_plot:
-    #    group_commit_plot()
+    if args.group_commit_plot:
+        group_commit_plot()
 
-    #if args.time_to_commit_plot:
-    #    time_to_commit_plot()
+    if args.time_to_commit_plot:
+        time_to_commit_plot()
 
     if args.long_running_txn_plot:
         long_running_txn_plot()
