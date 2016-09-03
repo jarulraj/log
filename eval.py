@@ -137,6 +137,8 @@ WAL_LOGGING_NAMES = ("nvm-wal", "ssd-wal", "hdd-wal")
 WBL_LOGGING_TYPES = (1, 2, 3)
 WBL_LOGGING_NAMES = ("nvm-wbl", "ssd-wbl", "hdd-wbl")
 
+NVM_INSTANT_NAMES = ("nvm-instant", "ssd-instant", "hdd-instant")
+
 SCALE_FACTOR = 1
 DATABASE_FILE_SIZE = 4096  # DATABASE FILE SIZE (MB)
 
@@ -475,6 +477,8 @@ def create_legend_storage():
     width = (1.0 - 2 * margin) / num_items
 
     bars = [None] * len(STORAGE_LABELS) * 2
+    
+    STORAGE_LABELS_UPPER = [x.upper() for x in STORAGE_LABELS]
 
     for group in xrange(len(STORAGE_LABELS)):
         data = [1]
@@ -483,7 +487,7 @@ def create_legend_storage():
                               linewidth=BAR_LINEWIDTH)
 
     # LEGEND
-    figlegend.legend(bars, STORAGE_LABELS, prop=LABEL_FP,
+    figlegend.legend(bars, STORAGE_LABELS_UPPER, prop=LABEL_FP,
                      loc=1, ncol=len(STORAGE_LABELS),
                      mode="expand", shadow=OPT_LEGEND_SHADOW,
                      frameon=False, borderaxespad=0.0,
@@ -501,6 +505,8 @@ def create_legend_update_ratio():
 
     workload_mix = ("Read-Heavy", "Balanced", "Write-Heavy")
 
+    WORKLOAD_MIX = [x.upper() for x in workload_mix]
+
     for group in xrange(len(YCSB_UPDATE_NAMES)):
         data = [1]
         x_values = [1]
@@ -511,13 +517,120 @@ def create_legend_update_ratio():
         idx = idx + 1
 
     # LEGEND
-    figlegend.legend(lines,  workload_mix, prop=LEGEND_FP,
+    figlegend.legend(lines,  WORKLOAD_MIX, prop=LEGEND_FP,
                      loc=1, ncol=4,
                      mode="expand", shadow=OPT_LEGEND_SHADOW,
                      frameon=False, borderaxespad=0.0,
                      handleheight=1, handlelength=4)
 
     figlegend.savefig('legend_update_ratio.pdf')
+
+def create_legend_instant():
+    fig = pylab.figure()
+    ax1 = fig.add_subplot(111)
+
+    figlegend = pylab.figure(figsize=(10, 0.5))
+
+    ARRAY = NVM_INSTANT_NAMES
+
+    data = [1]
+    x_values = [1]
+    lines = [None] * (len(ARRAY) + 1) * 2
+
+    idx = 0
+    for group in xrange(len(ARRAY)):
+        lines[idx], = ax1.plot(x_values, data, color=OPT_LINE_COLORS[idx],
+                               linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx],
+                               markersize=OPT_MARKER_SIZE,
+                               label=str(group))
+
+        idx = idx + 1
+
+    ARRAY_UPPER_CASE = [x.upper() for x in ARRAY]
+
+    # LEGEND
+    figlegend.legend(lines,  ARRAY_UPPER_CASE, prop=LEGEND_FP,
+                     loc=1, ncol=len(ARRAY),
+                     mode="expand", shadow=OPT_LEGEND_SHADOW,
+                     frameon=False, borderaxespad=0.0,
+                     handleheight=1, handlelength=4)    
+
+    filename = 'legend_instant'
+    filename = filename + ".pdf"
+
+    figlegend.savefig(filename)
+
+def create_legend_wbl():
+    fig = pylab.figure()
+    ax1 = fig.add_subplot(111)
+
+    figlegend = pylab.figure(figsize=(10, 0.5))
+
+    ARRAY = WBL_LOGGING_NAMES
+
+    data = [1]
+    x_values = [1]
+    lines = [None] * (len(ARRAY) + 1) * 2
+
+    idx = 0
+    for group in xrange(len(ARRAY)):
+        lines[idx], = ax1.plot(x_values, data, color=OPT_LINE_COLORS[idx],
+                               linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx],
+                               markersize=OPT_MARKER_SIZE,
+                               label=str(group))
+
+        idx = idx + 1
+
+    ARRAY_UPPER_CASE = [x.upper() for x in ARRAY]
+
+    # LEGEND
+    figlegend.legend(lines,  ARRAY_UPPER_CASE, prop=LEGEND_FP,
+                     loc=1, ncol=len(ARRAY),
+                     mode="expand", shadow=OPT_LEGEND_SHADOW,
+                     frameon=False, borderaxespad=0.0,
+                     handleheight=1, handlelength=4)    
+
+    filename = 'legend_wbl'
+    filename = filename + ".pdf"
+
+    figlegend.savefig(filename)
+    
+def create_legend_hybrid():
+    fig = pylab.figure()
+    ax1 = fig.add_subplot(111)
+
+    figlegend = pylab.figure(figsize=(13, 0.5))
+
+    HYBRID_NAMES = ("100% on NVM", "90% on NVM", "50% on NVM", "10% on NVM")
+
+    ARRAY = HYBRID_NAMES
+
+    data = [1]
+    x_values = [1]
+    lines = [None] * (len(ARRAY) + 1) * 2
+
+    idx = 0
+    for group in xrange(len(ARRAY)):
+        lines[idx], = ax1.plot(x_values, data, color=OPT_LINE_COLORS[idx],
+                               linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx],
+                               markersize=OPT_MARKER_SIZE,
+                               label=str(group))
+
+        idx = idx + 1
+
+    ARRAY_UPPER_CASE = [x.upper() for x in ARRAY]
+
+    # LEGEND
+    figlegend.legend(lines,  ARRAY_UPPER_CASE, prop=LEGEND_FP,
+                     loc=1, ncol=len(ARRAY),
+                     mode="expand", shadow=OPT_LEGEND_SHADOW,
+                     frameon=False, borderaxespad=0.0,
+                     handleheight=1, handlelength=4)    
+
+    filename = 'legend_hybrid'
+    filename = filename + ".pdf"
+
+    figlegend.savefig(filename)    
 
 def create_ycsb_throughput_line_chart(datasets):
     fig = plot.figure()
@@ -2721,5 +2834,8 @@ if __name__ == '__main__':
     #create_legend_logging_types(False, True)
     #create_legend_logging_types(True, False)
     #create_legend_logging_types(True, True)
-    #create_legend_storage()
-    #create_legend_update_ratio()
+    create_legend_storage()
+    create_legend_update_ratio()
+    create_legend_instant()
+    create_legend_wbl()
+    create_legend_hybrid()
