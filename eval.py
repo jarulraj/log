@@ -49,11 +49,12 @@ OPT_GRAPH_HEIGHT = 300
 OPT_GRAPH_WIDTH = 400
 
 # http://colrd.com/palette/19308/
-COLOR_MAP = ('#5D8AC6', '#9FD35D', '#C02500', "#003557", "#538B00", "#920000")
-#COLOR_MAP = ('#9EC9E9', '#80CA86', '#F58A87', "#5DA5DA", "#66A26B", "#F15854")
+COLOR_MAP1 = ('#5D8AC6', '#9FD35D', '#C02500', "#003557", "#538B00", "#920000")
+COLOR_MAP2 = ('#f15b40', '#67abb8', '#262626')
 
 
-OPT_COLORS = COLOR_MAP
+OPT_COLORS = COLOR_MAP1
+OPT_INSTANT_LINE_COLORS = COLOR_MAP2
 
 OPT_GRID_COLOR = 'gray'
 OPT_LEGEND_SHADOW = False
@@ -61,12 +62,12 @@ OPT_MARKERS = (['o', 's', 'v', "^", "h", "v", ">", "x", "d", "<", "|", "", "|", 
 OPT_PATTERNS = ([ "////", "o", "\\\\", "////", "o", "\\\\", "//////", "." , "\\\\\\"])
 
 OPT_LABEL_WEIGHT = 'bold'
-OPT_LINE_COLORS = COLOR_MAP
+OPT_LINE_COLORS = COLOR_MAP1
 OPT_LINE_WIDTH = 6.0
 OPT_MARKER_SIZE = 10.0
 DATA_LABELS = []
 
-OPT_STACK_COLORS = ('#BBBB88', '#EEDD99', '#EE8899', '#EEC290')
+OPT_STACK_COLORS = ('#2b3742', '#c9b385', '#610606', '#1f1501')
 OPT_LINE_STYLES= ('-', ':', '--', '-.')
 
 # SET FONT
@@ -477,7 +478,7 @@ def create_legend_storage():
     width = (1.0 - 2 * margin) / num_items
 
     bars = [None] * len(STORAGE_LABELS) * 2
-    
+
     STORAGE_LABELS_UPPER = [x.upper() for x in STORAGE_LABELS]
 
     for group in xrange(len(STORAGE_LABELS)):
@@ -539,7 +540,7 @@ def create_legend_instant():
 
     idx = 0
     for group in xrange(len(ARRAY)):
-        lines[idx], = ax1.plot(x_values, data, color=OPT_LINE_COLORS[idx],
+        lines[idx], = ax1.plot(x_values, data, color=OPT_INSTANT_LINE_COLORS[idx],
                                linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx],
                                markersize=OPT_MARKER_SIZE,
                                label=str(group))
@@ -553,7 +554,7 @@ def create_legend_instant():
                      loc=1, ncol=len(ARRAY),
                      mode="expand", shadow=OPT_LEGEND_SHADOW,
                      frameon=False, borderaxespad=0.0,
-                     handleheight=1, handlelength=4)    
+                     handleheight=1, handlelength=4)
 
     filename = 'legend_instant'
     filename = filename + ".pdf"
@@ -588,13 +589,13 @@ def create_legend_wbl():
                      loc=1, ncol=len(ARRAY),
                      mode="expand", shadow=OPT_LEGEND_SHADOW,
                      frameon=False, borderaxespad=0.0,
-                     handleheight=1, handlelength=4)    
+                     handleheight=1, handlelength=4)
 
     filename = 'legend_wbl'
     filename = filename + ".pdf"
 
     figlegend.savefig(filename)
-    
+
 def create_legend_hybrid():
     fig = pylab.figure()
     ax1 = fig.add_subplot(111)
@@ -625,12 +626,12 @@ def create_legend_hybrid():
                      loc=1, ncol=len(ARRAY),
                      mode="expand", shadow=OPT_LEGEND_SHADOW,
                      frameon=False, borderaxespad=0.0,
-                     handleheight=1, handlelength=4)    
+                     handleheight=1, handlelength=4)
 
     filename = 'legend_hybrid'
     filename = filename + ".pdf"
 
-    figlegend.savefig(filename)    
+    figlegend.savefig(filename)
 
 def create_ycsb_throughput_line_chart(datasets):
     fig = plot.figure()
@@ -1138,7 +1139,7 @@ def create_motivation_bar_chart(datasets, bar_type):
     ax1.minorticks_off()
 
     if bar_type == "Throughput":
-        ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+        ax1.set_ylabel("Throughput (txn/s)", fontproperties=LABEL_FP)
     elif bar_type == "Recovery":
         ax1.set_ylabel("Recovery Latency (s)", fontproperties=LABEL_FP)
         ax1.set_yscale('log', nonposy='clip')
@@ -1230,7 +1231,7 @@ def create_group_commit_line_chart(datasets):
     ax1 = fig.add_subplot(111)
 
     # X-AXIS
-    x_labels = [str(i) for i in GROUP_COMMIT_INTERVALS]
+    x_labels = [str(i) for i in GROUP_COMMIT_INTERVALS[:-1]]
     N = len(x_labels)
     ind = np.arange(N)
 
@@ -1240,6 +1241,9 @@ def create_group_commit_line_chart(datasets):
         group_data = []
 
         for line in  xrange(len(datasets[group])):
+            if line == 4:
+                continue
+
             for col in  xrange(len(datasets[group][line])):
                 if col == 1:
                     group_data.append(datasets[group][line][col])
@@ -1264,7 +1268,7 @@ def create_group_commit_line_chart(datasets):
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("Group Commit Interval", fontproperties=LABEL_FP)
+    ax1.set_xlabel("Group Commit Interval (us)", fontproperties=LABEL_FP)
     ax1.set_xticklabels(x_labels)
     #ax1.set_xlim([0.25, N - 0.25])
 
@@ -1380,7 +1384,7 @@ def create_goetz_line_chart(datasets):
     ax1 = fig.add_subplot(111)
 
     # X-AXIS
-    x_labels = [str(i) for i in REDO_FRACTIONS]
+    x_labels = [str(i) for i in REDO_FRACTIONS[:-1]]
     N = len(x_labels)
     ind = np.arange(N)
 
@@ -1390,6 +1394,9 @@ def create_goetz_line_chart(datasets):
         group_data = []
 
         for line in  xrange(len(datasets[group])):
+            if line == 3:
+                continue
+
             for col in  xrange(len(datasets[group][line])):
                 if col == 1:
                     group_data.append(datasets[group][line][col])
@@ -1397,7 +1404,7 @@ def create_goetz_line_chart(datasets):
         LOG.info("group_data = %s", str(group_data))
 
         ax1.plot(ind + 0.5, group_data,
-                 color=OPT_COLORS[idx],
+                 color=OPT_INSTANT_LINE_COLORS[idx],
                  linewidth=OPT_LINE_WIDTH, marker=OPT_MARKERS[idx], markersize=OPT_MARKER_SIZE,
                  label=str(group))
 
@@ -2710,13 +2717,13 @@ if __name__ == '__main__':
     parser.add_argument("-w", "--flush_mode_plot", help='plot flush_mode', action='store_true')
     parser.add_argument("-x", "--asynchronous_mode_plot", help='plot asynchronous_mode', action='store_true')
     parser.add_argument("-y", "--replication_plot", help='plot replication', action='store_true')
-    #parser.add_argument("-m", "--motivation_plot", help='plot motivation', action='store_true')
 
     parser.add_argument("-m", "--group_commit_plot", help='plot group commit', action='store_true')
     parser.add_argument("-n", "--time_to_commit_plot", help='eval time_to_commit', action='store_true')
     parser.add_argument("-o", "--long_running_txn_plot", help='eval long_running_txn', action='store_true')
     parser.add_argument("-p", "--goetz_plot", help='eval goetz', action='store_true')
     parser.add_argument("-q", "--hybrid_plot", help='eval hybrid', action='store_true')
+    #parser.add_argument("-r", "--motivation_plot", help='plot motivation', action='store_true')
 
     args = parser.parse_args()
 
@@ -2809,9 +2816,6 @@ if __name__ == '__main__':
     if args.asynchronous_mode_plot:
         asynchronous_mode_plot()
 
-    #if args.motivation_plot:
-    #    motivation_plot()
-
     if args.replication_plot:
         replication_plot()
 
@@ -2830,12 +2834,15 @@ if __name__ == '__main__':
     if args.hybrid_plot:
         hybrid_plot()
 
+    #if args.motivation_plot:
+    #    motivation_plot()
+
     #create_legend_logging_types(False, False)
     #create_legend_logging_types(False, True)
     #create_legend_logging_types(True, False)
     #create_legend_logging_types(True, True)
     create_legend_storage()
-    create_legend_update_ratio()
+    #create_legend_update_ratio()
     create_legend_instant()
-    create_legend_wbl()
-    create_legend_hybrid()
+    #create_legend_wbl()
+    #create_legend_hybrid()
