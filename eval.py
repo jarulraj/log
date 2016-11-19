@@ -688,7 +688,10 @@ def create_ycsb_recovery_bar_chart(datasets, ycsb):
     ax1 = fig.add_subplot(111)
 
     # X-AXIS
-    x_labels = [str(i) for i in YCSB_RECOVERY_COUNTS]
+    if ycsb == True:
+        x_labels = [str(i/10) for i in YCSB_RECOVERY_COUNTS]
+    else:
+        x_labels = [str(i/10) for i in TPCC_RECOVERY_COUNTS]
     N = len(x_labels)
     M = len(LOGGING_NAMES)
     ind = np.arange(N)
@@ -721,8 +724,8 @@ def create_ycsb_recovery_bar_chart(datasets, ycsb):
     ax1.set_ylabel("Recovery Time (s)", fontproperties=LABEL_FP)
     ax1.set_yscale('log', nonposy='clip')
     ax1.tick_params(axis='y', which='minor', left='off', right='off')
-    YLIMIT_MIN = math.pow(10, -2)
-    YLIMIT_MAX = math.pow(10, +2)
+    YLIMIT_MIN = math.pow(10, -1)
+    YLIMIT_MAX = math.pow(10, +3)
     ax1.set_ylim(YLIMIT_MIN, YLIMIT_MAX)
     ax1.set_yticklabels(["", "0.1", "1", "10", "100", "1000"])
 
@@ -731,9 +734,9 @@ def create_ycsb_recovery_bar_chart(datasets, ycsb):
     ax1.set_xticks(ind + margin + (group * width)/2.0 )
 
     if ycsb == True:
-        ax1.set_xticklabels(YCSB_RECOVERY_COUNTS_NAMES)
+        ax1.set_xticklabels(x_labels)
     else:
-        ax1.set_xticklabels(TPCC_RECOVERY_COUNTS_NAMES)
+        ax1.set_xticklabels(x_labels)
 
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
@@ -2706,8 +2709,8 @@ if __name__ == '__main__':
 
     #parser.add_argument("-m", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
     #parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
-    #parser.add_argument("-o", "--ycsb_recovery_plot", help='plot ycsb_recovery', action='store_true')
-    #parser.add_argument("-p", "--tpcc_recovery_plot", help='plot tpcc_recovery', action='store_true')
+    parser.add_argument("-o", "--ycsb_recovery_plot", help='plot ycsb_recovery', action='store_true')
+    parser.add_argument("-p", "--tpcc_recovery_plot", help='plot tpcc_recovery', action='store_true')
     #parser.add_argument("-q", "--ycsb_storage_plot", help='plot ycsb_storage', action='store_true')
     #parser.add_argument("-r", "--tpcc_storage_plot", help='plot tpcc_storage', action='store_true')
     parser.add_argument("-s", "--ycsb_latency_plot", help='plot ycsb_latency', action='store_true')
@@ -2720,8 +2723,8 @@ if __name__ == '__main__':
 
     parser.add_argument("-m", "--group_commit_plot", help='plot group commit', action='store_true')
     parser.add_argument("-n", "--time_to_commit_plot", help='eval time_to_commit', action='store_true')
-    parser.add_argument("-o", "--long_running_txn_plot", help='eval long_running_txn', action='store_true')
-    parser.add_argument("-p", "--goetz_plot", help='eval goetz', action='store_true')
+    #parser.add_argument("-o", "--long_running_txn_plot", help='eval long_running_txn', action='store_true')
+    #parser.add_argument("-p", "--goetz_plot", help='eval goetz', action='store_true')
     parser.add_argument("-q", "--hybrid_plot", help='eval hybrid', action='store_true')
     #parser.add_argument("-r", "--motivation_plot", help='plot motivation', action='store_true')
 
@@ -2786,11 +2789,11 @@ if __name__ == '__main__':
     #if args.tpcc_throughput_plot:
     #    tpcc_throughput_plot()
 
-    #if args.ycsb_recovery_plot:
-    #    ycsb_recovery_plot()
+    if args.ycsb_recovery_plot:
+        ycsb_recovery_plot()
 
-    #if args.tpcc_recovery_plot:
-    #    tpcc_recovery_plot()
+    if args.tpcc_recovery_plot:
+        tpcc_recovery_plot()
 
     #if args.ycsb_storage_plot:
     #    ycsb_storage_plot()
@@ -2825,11 +2828,11 @@ if __name__ == '__main__':
     if args.time_to_commit_plot:
         time_to_commit_plot()
 
-    if args.long_running_txn_plot:
-        long_running_txn_plot()
+    #if args.long_running_txn_plot:
+    #    long_running_txn_plot()
 
-    if args.goetz_plot:
-        goetz_plot()
+    #if args.goetz_plot:
+    #    goetz_plot()
 
     if args.hybrid_plot:
         hybrid_plot()
