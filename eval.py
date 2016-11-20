@@ -82,13 +82,18 @@ BAR_LINEWIDTH = 1.2
 
 # SET TYPE1 FONTS
 matplotlib.rcParams['ps.useafm'] = True
-matplotlib.rcParams['font.family'] = OPT_FONT_NAME
 matplotlib.rcParams['pdf.use14corefonts'] = True
+matplotlib.rcParams['text.usetex'] = True
+matplotlib.rcParams['text.latex.preamble']= [
+    r'\usepackage{helvet}',    # set the normal font here
+    r'\usepackage{sansmath}',  # load up the sansmath so that math -> helvet
+    r'\sansmath'               # <- tricky! -- gotta actually tell tex to use!
+]
 
-LABEL_FP = FontProperties(style='normal', size=LABEL_FONT_SIZE, weight='bold')
-TICK_FP = FontProperties(style='normal', size=TICK_FONT_SIZE)
-TINY_FP = FontProperties(style='normal', size=TINY_FONT_SIZE)
-LEGEND_FP = FontProperties(style='normal', size=LEGEND_FONT_SIZE, weight='bold')
+LABEL_FP = FontProperties(family=OPT_FONT_NAME, style='normal', size=LABEL_FONT_SIZE, weight='bold')
+TICK_FP = FontProperties(family=OPT_FONT_NAME, style='normal', size=TICK_FONT_SIZE)
+TINY_FP = FontProperties(family=OPT_FONT_NAME, style='normal', size=TINY_FONT_SIZE)
+LEGEND_FP = FontProperties(family=OPT_FONT_NAME, style='normal', size=LEGEND_FONT_SIZE, weight='bold')
 
 YAXIS_TICKS = 3
 YAXIS_ROUND = 1000.0
@@ -668,11 +673,11 @@ def create_ycsb_throughput_line_chart(datasets):
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
-    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+    ax1.set_ylabel(r'\textbf{Throughput}', fontproperties=LABEL_FP)
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("Number of Worker Threads", fontproperties=LABEL_FP)
+    ax1.set_xlabel(r'\textbf{Number of Worker Threads}', fontproperties=LABEL_FP)
     ax1.set_xticklabels(x_labels)
     ax1.set_xlim([0.25, N - 0.25])
 
@@ -721,7 +726,7 @@ def create_ycsb_recovery_bar_chart(datasets, ycsb):
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
-    ax1.set_ylabel("Recovery Time (s)", fontproperties=LABEL_FP)
+    ax1.set_ylabel(r'\textbf{Recovery Time (s)}', fontproperties=LABEL_FP)
     ax1.set_yscale('log', nonposy='clip')
     ax1.tick_params(axis='y', which='minor', left='off', right='off')
     YLIMIT_MIN = math.pow(10, -1)
@@ -730,7 +735,7 @@ def create_ycsb_recovery_bar_chart(datasets, ycsb):
     ax1.set_yticklabels(["", "0.1", "1", "10", "100", "1000"])
 
     # X-AXIS
-    ax1.set_xlabel("Number of Transactions (K)", fontproperties=LABEL_FP)
+    ax1.set_xlabel(r'\textbf{Number of Transactions (K)}', fontproperties=LABEL_FP)
     ax1.set_xticks(ind + margin + (group * width)/2.0 )
 
     if ycsb == True:
@@ -812,7 +817,7 @@ def create_ycsb_storage_bar_chart(datasets):
     makeGrid(ax1)
 
     # Y-AXIS
-    ax1.set_ylabel("Storage (GB)", fontproperties=LABEL_FP)
+    ax1.set_ylabel(r'\textbf{Storage (GB)}', fontproperties=LABEL_FP)
     ax1.yaxis.set_major_locator(MaxNLocator(4))
 
     # X-AXIS
@@ -823,7 +828,7 @@ def create_ycsb_storage_bar_chart(datasets):
     for label in ax1.get_yticklabels() :
         label.set_fontproperties(TICK_FP)
     for label in ax1.get_xticklabels() :
-        label.set_fontproperties(LABEL_FP)
+        label.set_fontproperties(TICK_FP)
 
     return (fig)
 
@@ -862,7 +867,7 @@ def create_ycsb_latency_bar_chart(datasets, experiment_type):
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
-    ax1.set_ylabel("Latency (ms)", fontproperties=LABEL_FP)
+    ax1.set_ylabel(r'\textbf{Latency (ms)}', fontproperties=LABEL_FP)
     ax1.set_yscale('log', nonposy='clip')
     ax1.tick_params(axis='y', which='minor', left='off', right='off')
 
@@ -879,7 +884,7 @@ def create_ycsb_latency_bar_chart(datasets, experiment_type):
 
     # X-AXIS
     ax1.set_xticks(ind + margin + 0.5)
-    ax1.set_xlabel("Number of Worker Threads", fontproperties=LABEL_FP)
+    ax1.set_xlabel(r'\textbf{Number of Worker Threads}', fontproperties=LABEL_FP)
     ax1.set_xticklabels(x_labels)
 
     for label in ax1.get_yticklabels() :
@@ -927,11 +932,11 @@ def create_nvm_latency_line_chart(datasets):
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
-    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+    ax1.set_ylabel(r'\textbf{Throughput}', fontproperties=LABEL_FP)
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("NVM Latency", fontproperties=LABEL_FP)
+    ax1.set_xlabel(r'\textbf{NVM Latency}', fontproperties=LABEL_FP)
     ax1.set_xticklabels(NVM_LATENCIES_LABELS)
     ax1.set_xlim([0.25, N - 0.25])
 
@@ -977,11 +982,11 @@ def create_pcommit_latency_line_chart(datasets):
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
-    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+    ax1.set_ylabel(r'\textbf{Throughput}', fontproperties=LABEL_FP)
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("PCOMMIT Latency (ns)", fontproperties=LABEL_FP)
+    ax1.set_xlabel(r'\textbf{PCOMMIT Latency (ns)}', fontproperties=LABEL_FP)
     ax1.set_xticklabels(PCOMMIT_LABELS)
 
     for label in ax1.get_yticklabels() :
@@ -1031,11 +1036,11 @@ def create_flush_mode_bar_chart(datasets):
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
-    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+    ax1.set_ylabel(r'\textbf{Throughput}', fontproperties=LABEL_FP)
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("NVM Flush Instruction", fontproperties=LABEL_FP)
+    ax1.set_xlabel(r'\textbf{NVM Flush Instruction}', fontproperties=LABEL_FP)
     ax1.set_xticklabels(FLUSH_MODES_NAMES)
 
     for label in ax1.get_yticklabels() :
@@ -1083,11 +1088,11 @@ def create_asynchronous_mode_bar_chart(datasets):
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS + 2))
     ax1.minorticks_off()
-    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+    ax1.set_ylabel(r'\textbf{Throughput}', fontproperties=LABEL_FP)
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("Logging Status", fontproperties=LABEL_FP)
+    ax1.set_xlabel(r'\textbf{Logging Status}', fontproperties=LABEL_FP)
     ax1.set_xticklabels(ASYNCHRONOUS_MODES_NAMES)
 
     for label in ax1.get_yticklabels() :
@@ -1142,17 +1147,17 @@ def create_motivation_bar_chart(datasets, bar_type):
     ax1.minorticks_off()
 
     if bar_type == "Throughput":
-        ax1.set_ylabel("Throughput (txn/s)", fontproperties=LABEL_FP)
+        ax1.set_ylabel(r'\textbf{Throughput (txn/s)}', fontproperties=LABEL_FP)
     elif bar_type == "Recovery":
-        ax1.set_ylabel("Recovery Latency (s)", fontproperties=LABEL_FP)
+        ax1.set_ylabel(r'\textbf{Recovery Latency (s)}', fontproperties=LABEL_FP)
         ax1.set_yscale('log', nonposy='clip')
         ax1.tick_params(axis='y', which='minor', left='off', right='off')
         ax1.set_yticklabels(["", "0.1", "1", "10", "100", "1000"])
     elif bar_type == "Storage":
-        ax1.set_ylabel("Storage (GB)", fontproperties=LABEL_FP)
+        ax1.set_ylabel(r'\textbf{Storage (GB)}', fontproperties=LABEL_FP)
 
     # X-AXIS
-    ax1.set_xlabel("Logging Protocol", fontproperties=LABEL_FP)
+    ax1.set_xlabel(r'\textbf{Logging Protocol}', fontproperties=LABEL_FP)
     ax1.set_xticks(label_locations)
     ax1.set_xticklabels(NVM_LOGGING_NAMES_UPPER_CASE)
 
@@ -1210,13 +1215,13 @@ def create_replication_chart(datasets, experiment_type):
     ax1.minorticks_off()
 
     if experiment_type == "Throughput":
-        ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+        ax1.set_ylabel(r'\textbf{Throughput}', fontproperties=LABEL_FP)
     elif experiment_type == "Latency":
-        ax1.set_ylabel("Latency (ms)", fontproperties=LABEL_FP)
+        ax1.set_ylabel(r'\textbf{Latency (ms)}', fontproperties=LABEL_FP)
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("Replication Mode", fontproperties=LABEL_FP)
+    ax1.set_xlabel(r'\textbf{Replication Mode}', fontproperties=LABEL_FP)
     ax1.set_xticklabels(REPLICATION_MODES_NAMES_UPPER_CASE)
 
     if experiment_type == "Throughput":
@@ -1267,11 +1272,11 @@ def create_group_commit_line_chart(datasets):
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
-    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+    ax1.set_ylabel(r'\textbf{Throughput}', fontproperties=LABEL_FP)
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("Group Commit Interval (us)", fontproperties=LABEL_FP)
+    ax1.set_xlabel(r'\textbf{Group Commit Interval (us)}', fontproperties=LABEL_FP)
     ax1.set_xticklabels(x_labels)
     #ax1.set_xlim([0.25, N - 0.25])
 
@@ -1317,11 +1322,11 @@ def create_time_to_commit_line_chart(datasets):
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
-    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+    ax1.set_ylabel(r'\textbf{Throughput}', fontproperties=LABEL_FP)
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("Op Count", fontproperties=LABEL_FP)
+    ax1.set_xlabel(r'\textbf{Op Count}', fontproperties=LABEL_FP)
     ax1.set_xticklabels(x_labels)
     #ax1.set_xlim([0.25, N - 0.25])
 
@@ -1367,11 +1372,11 @@ def create_long_running_txn_line_chart(datasets):
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
-    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+    ax1.set_ylabel(r'\textbf{Throughput}', fontproperties=LABEL_FP)
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("Long Running Transaction Count", fontproperties=LABEL_FP)
+    ax1.set_xlabel(r'\textbf{Long Running Transaction Count}', fontproperties=LABEL_FP)
     ax1.set_xticklabels(x_labels)
     #ax1.set_xlim([0.25, N - 0.25])
 
@@ -1420,11 +1425,11 @@ def create_goetz_line_chart(datasets):
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
-    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+    ax1.set_ylabel(r'\textbf{Throughput}', fontproperties=LABEL_FP)
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("Redo Fraction", fontproperties=LABEL_FP)
+    ax1.set_xlabel(r'\textbf{Redo Fraction}', fontproperties=LABEL_FP)
     ax1.set_xticklabels(x_labels)
     #ax1.set_xlim([0.25, N - 0.25])
 
@@ -1470,11 +1475,11 @@ def create_hybrid_line_chart(datasets):
     # Y-AXIS
     ax1.yaxis.set_major_locator(LinearLocator(YAXIS_TICKS))
     ax1.minorticks_off()
-    ax1.set_ylabel("Throughput", fontproperties=LABEL_FP)
+    ax1.set_ylabel(r'\textbf{Throughput}', fontproperties=LABEL_FP)
 
     # X-AXIS
     ax1.set_xticks(ind + 0.5)
-    ax1.set_xlabel("Number of Client Threads", fontproperties=LABEL_FP)
+    ax1.set_xlabel(r'\textbf{Number of Client Threads}', fontproperties=LABEL_FP)
     ax1.set_xticklabels(x_labels)
     #ax1.set_xlim([0.25, N - 0.25])
 
@@ -2709,8 +2714,8 @@ if __name__ == '__main__':
 
     #parser.add_argument("-m", "--ycsb_throughput_plot", help='plot ycsb_throughput', action='store_true')
     #parser.add_argument("-n", "--tpcc_throughput_plot", help='plot tpcc_throughput', action='store_true')
-    parser.add_argument("-o", "--ycsb_recovery_plot", help='plot ycsb_recovery', action='store_true')
-    parser.add_argument("-p", "--tpcc_recovery_plot", help='plot tpcc_recovery', action='store_true')
+    #parser.add_argument("-o", "--ycsb_recovery_plot", help='plot ycsb_recovery', action='store_true')
+    #parser.add_argument("-p", "--tpcc_recovery_plot", help='plot tpcc_recovery', action='store_true')
     #parser.add_argument("-q", "--ycsb_storage_plot", help='plot ycsb_storage', action='store_true')
     #parser.add_argument("-r", "--tpcc_storage_plot", help='plot tpcc_storage', action='store_true')
     parser.add_argument("-s", "--ycsb_latency_plot", help='plot ycsb_latency', action='store_true')
@@ -2723,10 +2728,10 @@ if __name__ == '__main__':
 
     parser.add_argument("-m", "--group_commit_plot", help='plot group commit', action='store_true')
     parser.add_argument("-n", "--time_to_commit_plot", help='eval time_to_commit', action='store_true')
-    #parser.add_argument("-o", "--long_running_txn_plot", help='eval long_running_txn', action='store_true')
-    #parser.add_argument("-p", "--goetz_plot", help='eval goetz', action='store_true')
+    parser.add_argument("-o", "--long_running_txn_plot", help='eval long_running_txn', action='store_true')
+    parser.add_argument("-p", "--goetz_plot", help='eval goetz', action='store_true')
     parser.add_argument("-q", "--hybrid_plot", help='eval hybrid', action='store_true')
-    #parser.add_argument("-r", "--motivation_plot", help='plot motivation', action='store_true')
+    parser.add_argument("-r", "--motivation_plot", help='plot motivation', action='store_true')
 
     args = parser.parse_args()
 
@@ -2789,11 +2794,11 @@ if __name__ == '__main__':
     #if args.tpcc_throughput_plot:
     #    tpcc_throughput_plot()
 
-    if args.ycsb_recovery_plot:
-        ycsb_recovery_plot()
+    #if args.ycsb_recovery_plot:
+    #    ycsb_recovery_plot()
 
-    if args.tpcc_recovery_plot:
-        tpcc_recovery_plot()
+    #if args.tpcc_recovery_plot:
+    #    tpcc_recovery_plot()
 
     #if args.ycsb_storage_plot:
     #    ycsb_storage_plot()
@@ -2828,24 +2833,24 @@ if __name__ == '__main__':
     if args.time_to_commit_plot:
         time_to_commit_plot()
 
-    #if args.long_running_txn_plot:
-    #    long_running_txn_plot()
+    if args.long_running_txn_plot:
+        long_running_txn_plot()
 
-    #if args.goetz_plot:
-    #    goetz_plot()
+    if args.goetz_plot:
+        goetz_plot()
 
     if args.hybrid_plot:
         hybrid_plot()
 
-    #if args.motivation_plot:
-    #    motivation_plot()
+    if args.motivation_plot:
+        motivation_plot()
 
-    #create_legend_logging_types(False, False)
-    #create_legend_logging_types(False, True)
-    #create_legend_logging_types(True, False)
-    #create_legend_logging_types(True, True)
+    create_legend_logging_types(False, False)
+    create_legend_logging_types(False, True)
+    create_legend_logging_types(True, False)
+    create_legend_logging_types(True, True)
     create_legend_storage()
-    #create_legend_update_ratio()
+    create_legend_update_ratio()
     create_legend_instant()
-    #create_legend_wbl()
-    #create_legend_hybrid()
+    create_legend_wbl()
+    create_legend_hybrid()
